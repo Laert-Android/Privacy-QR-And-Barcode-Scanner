@@ -104,7 +104,7 @@ cd Privacy-QR-And-Barcode-Scanner
 | Component | Library |
 |---|---|
 | Camera | CameraX 1.3.4 |
-| Barcode scanning | ML Kit Barcode Scanning 17.3.0 (bundled) |
+| Barcode scanning | ZXing Barcode Scanning |
 | UI | Material Components |
 | Language | Java |
 | Min SDK | Android 5.0 (API 21) |
