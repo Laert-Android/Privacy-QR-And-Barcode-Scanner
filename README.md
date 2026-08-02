@@ -1,4 +1,4 @@
-# Privacy QR and Barcode Scanner
+# Privacy QR And Barcode Scanner
 
 ![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)
 
