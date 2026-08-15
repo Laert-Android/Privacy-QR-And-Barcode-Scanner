@@ -1,1 +1,1 @@
-Privacy QR Scanner
+Privacy QR And Barcode Scanner
