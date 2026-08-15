@@ -3,17 +3,23 @@
 ![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)
 
 
-![Version](https://img.shields.io/badge/Version-1.6-teal.svg)
+![Version](https://img.shields.io/badge/Version-1.7-teal.svg)
 
 ![Android](https://img.shields.io/badge/Android-5.0%2B-green.svg)
 
 A fast, lightweight, and fully offline QR code and barcode scanner for Android. No internet permission. No tracking. No ads.
 
 ---
-## Latest Version: 1.6
+## Latest Version: 1.7
 
 ### Changelog
 
+**Version 1.7**
+What's new in v1.7:
+- Flashlight (Torch) support
+- Tap to Focus
+- Pinch to Zoom
+  
 **Version 1.6**
 What's new in v1.6:
 - Scan QR codes and barcodes from images stored on device
