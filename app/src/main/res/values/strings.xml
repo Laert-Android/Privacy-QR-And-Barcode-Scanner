@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Privacy QR and Barcode Scanner</string>
+    <string name="app_name">Privacy QR And Barcode Scanner</string>
     <string name="scan_hint">Point camera at a QR code</string>
     <string name="scanned_result">Scanned Result</string>
     <string name="copy">Copy</string>
@@ -8,4 +8,5 @@
     <string name="open">Open</string>
     <string name="tile_label">Scan QR Code</string>
     <string name="tile_subtitle">Tap to scan</string>
+    <string name="scan_from_gallery">Scan from Gallery</string>
 </resources>

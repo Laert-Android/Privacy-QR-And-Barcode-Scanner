@@ -57,12 +57,15 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.provider.MediaStore;
 import com.google.zxing.RGBLuminanceSource;
-import com.google.zxing.common.GlobalHistogramBinarizer;
-import android.graphics.Matrix;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.ColorMatrix;
-import android.graphics.ColorMatrixColorFilter;
+import androidx.camera.core.Camera;
+import android.widget.ImageButton;
+import androidx.camera.core.FocusMeteringAction;
+import androidx.camera.core.MeteringPoint;
+import androidx.camera.view.PreviewView;
+import android.view.MotionEvent;
+import java.util.concurrent.TimeUnit;
+import android.view.ScaleGestureDetector;
+import android.widget.ImageButton;
 
 public class ScanFragment extends Fragment {
 
@@ -77,6 +80,11 @@ public class ScanFragment extends Fragment {
     private boolean isScanned = false;
     private String lastResult = "";
     private MultiFormatReader reader;
+    private Camera camera;
+    private ScaleGestureDetector scaleGestureDetector;
+    private float currentZoomRatio = 1f;
+    private ImageButton btnFlash;
+    private boolean torchEnabled = false;
 
     @Nullable
     @Override
@@ -88,78 +96,33 @@ public class ScanFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == PICK_IMAGE_REQUEST
-                && resultCode == Activity.RESULT_OK
-                && data != null
-                && data.getData() != null) {
-
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null) {
             try {
                 Uri imageUri = data.getData();
-
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(
-                        requireActivity().getContentResolver(),
-                        imageUri);
+                        requireActivity().getContentResolver(), imageUri);
 
                 int width = bitmap.getWidth();
                 int height = bitmap.getHeight();
-
                 int[] pixels = new int[width * height];
                 bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
 
-                RGBLuminanceSource source =
-                        new RGBLuminanceSource(width, height, pixels);
+                RGBLuminanceSource source = new RGBLuminanceSource(width, height, pixels);
+                BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
 
-                Result result = null;
-
-                BinaryBitmap[] bitmaps = new BinaryBitmap[]{
-                        new BinaryBitmap(new HybridBinarizer(source)),
-                        new BinaryBitmap(new GlobalHistogramBinarizer(source))
-                };
-
-                for (BinaryBitmap bitmapTry : bitmaps) {
-                    try {
-                        reader.reset();
-                        result = reader.decodeWithState(bitmapTry);
-
-                        if (result != null) {
-                            break;
-                        }
-                    } catch (Exception ignored) {
-                    }
-                }
-
-                reader.reset();
-
+                Result result = reader.decode(binaryBitmap);
                 if (result != null) {
                     lastResult = result.getText();
-
                     String format = result.getBarcodeFormat().toString();
-
-                    HistoryManager.save(
-                            requireContext(),
-                            lastResult,
-                            format
-                    );
-
-                    requireActivity().runOnUiThread(() ->
-                            handleResult(lastResult));
-                } else {
-                    Toast.makeText(
-                            requireContext(),
-                            "No QR code found in image",
-                            Toast.LENGTH_SHORT
-                    ).show();
+                    HistoryManager.save(requireContext(), lastResult, format);
+                    requireActivity().runOnUiThread(() -> handleResult(lastResult));
                 }
-
+            } catch (NotFoundException e) {
+                Toast.makeText(requireContext(), "No QR code found in image",
+                        Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
-                Toast.makeText(
-                        requireContext(),
-                        "Error reading image",
-                        Toast.LENGTH_SHORT
-                ).show();
-
-                Log.e("QRScanner", "Gallery scan error", e);
+                Toast.makeText(requireContext(), "Error reading image",
+                        Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -167,7 +130,7 @@ public class ScanFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        Button btnGallery = view.findViewById(R.id.btnGallery);
+        ImageButton btnGallery = view.findViewById(R.id.btnGallery);
         btnGallery.setOnClickListener(v -> scanFromGallery());
 
         previewView = view.findViewById(R.id.previewView);
@@ -203,6 +166,32 @@ public class ScanFragment extends Fragment {
             btnOpen.setVisibility(View.GONE);
             bottomSheet.setVisibility(View.GONE);
         });
+
+        btnFlash = view.findViewById(R.id.btnFlash);
+
+        if (!requireContext().getPackageManager()
+                .hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
+
+            btnFlash.setVisibility(View.GONE);
+
+        } else {
+
+            btnFlash.setOnClickListener(v -> {
+
+                if (camera == null)
+                    return;
+
+                torchEnabled = !torchEnabled;
+
+                camera.getCameraControl().enableTorch(torchEnabled);
+
+                btnFlash.setImageResource(
+                        torchEnabled ?
+                                R.drawable.ic_flash_on :
+                                R.drawable.ic_flash_off
+                );
+            });
+        }
 
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -345,168 +334,85 @@ public class ScanFragment extends Fragment {
 
                 CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
                 cameraProvider.unbindAll();
-                cameraProvider.bindToLifecycle(getViewLifecycleOwner(), cameraSelector,
-                        preview, imageAnalysis);
+                camera = cameraProvider.bindToLifecycle(
+                        getViewLifecycleOwner(),
+                        cameraSelector,
+                        preview,
+                        imageAnalysis
+                );
+
+                scaleGestureDetector = new ScaleGestureDetector(
+                        requireContext(),
+                        new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+
+                            @Override
+                            public boolean onScale(ScaleGestureDetector detector) {
+
+                                if (camera == null)
+                                    return true;
+
+                                float scale = detector.getScaleFactor();
+
+                                currentZoomRatio *= scale;
+
+                                float maxZoom = camera.getCameraInfo()
+                                        .getZoomState()
+                                        .getValue()
+                                        .getMaxZoomRatio();
+
+                                currentZoomRatio = Math.max(
+                                        1f,
+                                        Math.min(currentZoomRatio, maxZoom)
+                                );
+
+                                camera.getCameraControl()
+                                        .setZoomRatio(currentZoomRatio);
+
+                                return true;
+                            }
+                        }
+                );
+
+                previewView.setOnTouchListener((view, event) -> {
+
+                    // Zoom me dy gishta
+                    if (scaleGestureDetector != null) {
+                        scaleGestureDetector.onTouchEvent(event);
+                    }
+
+                    // Tap to Focus vetëm me një prekje
+                    if (event.getPointerCount() == 1 &&
+                            event.getAction() == MotionEvent.ACTION_DOWN) {
+
+                        if (camera != null) {
+
+                            MeteringPoint point =
+                                    previewView.getMeteringPointFactory()
+                                            .createPoint(
+                                                    event.getX(),
+                                                    event.getY()
+                                            );
+
+                            FocusMeteringAction action =
+                                    new FocusMeteringAction.Builder(point)
+                                            .setAutoCancelDuration(
+                                                    3,
+                                                    TimeUnit.SECONDS
+                                            )
+                                            .build();
+
+                            camera.getCameraControl()
+                                    .startFocusAndMetering(action);
+                        }
+                    }
+
+                    return true;
+                });
 
             } catch (ExecutionException | InterruptedException e) {
                 e.printStackTrace();
             }
         }, ContextCompat.getMainExecutor(requireContext()));
-    }
-
-    private Result decodeBitmap(Bitmap bitmap) {
-
-        float[] scales = {1.0f, 1.5f, 2.0f, 3.0f};
-
-        for (float scale : scales) {
-
-            Bitmap scaled = scaleBitmap(bitmap, scale);
-
-            Bitmap[] images = {
-                    scaled,
-                    enhanceContrast(scaled)
-            };
-
-            for (Bitmap image : images) {
-
-                if (image == null)
-                    continue;
-
-                Bitmap[] rotations = {
-                        image,
-                        rotateBitmap(image, 90),
-                        rotateBitmap(image, 180),
-                        rotateBitmap(image, 270)
-                };
-
-                for (Bitmap rotated : rotations) {
-
-                    if (rotated == null)
-                        continue;
-
-                    int width = rotated.getWidth();
-                    int height = rotated.getHeight();
-
-                    int[] pixels = new int[width * height];
-                    rotated.getPixels(pixels, 0, width, 0, 0, width, height);
-
-                    RGBLuminanceSource source =
-                            new RGBLuminanceSource(width, height, pixels);
-
-                    BinaryBitmap[] attempts = {
-                            new BinaryBitmap(new HybridBinarizer(source)),
-                            new BinaryBitmap(new GlobalHistogramBinarizer(source))
-                    };
-
-                    for (BinaryBitmap binaryBitmap : attempts) {
-
-                        try {
-
-                            reader.reset();
-
-                            Result result =
-                                    reader.decodeWithState(binaryBitmap);
-
-                            if (result != null) {
-                                return result;
-                            }
-
-                        } catch (Exception ignored) {
-
-                        } finally {
-
-                            reader.reset();
-
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private Bitmap rotateBitmap(Bitmap bitmap, float angle) {
-
-        if (bitmap == null) {
-            return null;
-        }
-
-        Matrix matrix = new Matrix();
-        matrix.postRotate(angle);
-
-        try {
-            return Bitmap.createBitmap(
-                    bitmap,
-                    0,
-                    0,
-                    bitmap.getWidth(),
-                    bitmap.getHeight(),
-                    matrix,
-                    true
-            );
-        } catch (OutOfMemoryError e) {
-            Log.e("QRScanner", "Failed to rotate bitmap", e);
-            return bitmap;
-        }
-    }
-
-    private Bitmap scaleBitmap(Bitmap bitmap, float scale) {
-
-        if (bitmap == null) {
-            return null;
-        }
-
-        if (scale == 1.0f) {
-            return bitmap;
-        }
-
-        int newWidth = Math.max(1, Math.round(bitmap.getWidth() * scale));
-        int newHeight = Math.max(1, Math.round(bitmap.getHeight() * scale));
-
-        try {
-            return Bitmap.createScaledBitmap(
-                    bitmap,
-                    newWidth,
-                    newHeight,
-                    true
-            );
-        } catch (OutOfMemoryError e) {
-            Log.e("QRScanner", "Failed to scale bitmap", e);
-            return bitmap;
-        }
-    }
-
-    private Bitmap enhanceContrast(Bitmap bitmap) {
-
-        if (bitmap == null) {
-            return null;
-        }
-
-        Bitmap output = Bitmap.createBitmap(
-                bitmap.getWidth(),
-                bitmap.getHeight(),
-                Bitmap.Config.ARGB_8888
-        );
-
-        Canvas canvas = new Canvas(output);
-
-        Paint paint = new Paint();
-
-        ColorMatrix colorMatrix = new ColorMatrix(new float[]{
-
-                1.3f, 0,    0,    0,    15,
-                0,    1.3f, 0,    0,    15,
-                0,    0,    1.3f, 0,    15,
-                0,    0,    0,    1,    0
-
-        });
-
-        paint.setColorFilter(new ColorMatrixColorFilter(colorMatrix));
-
-        canvas.drawBitmap(bitmap, 0, 0, paint);
-
-        return output;
     }
 
     @RequiresPermission(Manifest.permission.VIBRATE)
@@ -607,6 +513,9 @@ public class ScanFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         if (cameraExecutor != null) {
+            if (camera != null) {
+                camera.getCameraControl().enableTorch(false);
+            }
             cameraExecutor.shutdown();
         }
     }

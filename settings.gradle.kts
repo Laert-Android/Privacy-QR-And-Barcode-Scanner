@@ -21,6 +21,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Privacy QR Scanner"
+rootProject.name = "Privacy QR And Barcode Scanner"
 include(":app")
  

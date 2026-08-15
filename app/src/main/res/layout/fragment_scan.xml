@@ -29,18 +29,27 @@
         android:layout_marginBottom="100dp"
         android:background="@drawable/scan_line"/>
 
-    <androidx.appcompat.widget.AppCompatButton
+    <ImageButton
         android:id="@+id/btnGallery"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_gravity="top|start"
         android:layout_margin="16dp"
-        android:text="Scan from Gallery"
-        android:background="@drawable/btn_copy"
-        android:textColor="#FFFFFF"
-        android:textSize="11sp"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"/>
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/photo_library"
+        android:tint="#FFFFFF"
+        android:contentDescription="@string/scan_from_gallery"/>
+
+    <ImageButton
+        android:id="@+id/btnFlash"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_flash_off"
+        android:contentDescription="Flash"
+        android:tint="#FFFFFF"/>
 
     <!-- Bottom Sheet -->
     <LinearLayout
