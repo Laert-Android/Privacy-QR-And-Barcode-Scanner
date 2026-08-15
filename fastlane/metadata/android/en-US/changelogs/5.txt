@@ -1,0 +1,5 @@
+Release v1.7
+
+- Added flashlight support
+- Added tap to focus
+- Added pinch to zoom
