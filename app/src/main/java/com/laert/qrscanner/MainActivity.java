@@ -14,7 +14,7 @@ public class MainActivity extends AppCompatActivity {
     public void onBackPressed() {
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Thanks for using Privacy QR And Barcode Scanner!")
-                .setMessage("If you like this app , please share my github project with your friends and family!\n\nHave a great day! 😊")
+                .setMessage("If you like this app,please share my github project with your friends and family!\n\nHave a great day! 😊")
                 .setPositiveButton("Share", (dialog, which) -> {
                     Intent shareIntent = new Intent(Intent.ACTION_SEND);
                     shareIntent.setType("text/plain");
