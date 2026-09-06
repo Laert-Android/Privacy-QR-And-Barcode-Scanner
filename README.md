@@ -75,6 +75,22 @@ This app requests only one permission:
 No network permission is requested. No data leaves your device. No third-party SDKs with telemetry are active.
 
 ---
+## Screenshots
+
+
+
+![Results](fastlane/metadata/android/en-US/images/1.png)
+
+
+
+
+![Results](fastlane/metadata/android/en-US/images/2.png)
+
+
+
+
+![Results](fastlane/metadata/android/en-US/images/3.png)
+
 
 ## Download
 
