@@ -84,12 +84,12 @@ No network permission is requested. No data leaves your device. No third-party S
 
 
 
-![Results](fastlane/metadata/android/en-US/images/phoneScreenshot/2.png)
+![Results](fastlane/metadata/android/en-US/images/phoneScreenshots/2.png)
 
 
 
 
-![Results](fastlane/metadata/android/en-US/images/phoneScreenshot/3.png)
+![Results](fastlane/metadata/android/en-US/images/phoneScreenshots/3.png)
 
 
 ## Download
