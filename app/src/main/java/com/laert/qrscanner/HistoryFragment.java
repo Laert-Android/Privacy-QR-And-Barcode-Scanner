@@ -42,6 +42,14 @@ public class HistoryFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Push the whole screen (title row included) below the status bar.
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            int topInset = insets.getInsets(
+                    androidx.core.view.WindowInsetsCompat.Type.statusBars()).top;
+            v.setPadding(v.getPaddingLeft(), topInset, v.getPaddingRight(), v.getPaddingBottom());
+            return insets;
+        });
+
         listView = view.findViewById(R.id.listView);
         tvEmpty = view.findViewById(R.id.tvEmpty);
         Button btnClear = view.findViewById(R.id.btnClear);

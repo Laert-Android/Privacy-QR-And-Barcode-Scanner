@@ -18,8 +18,8 @@ android {
         applicationId = "com.laert.qrscanner"
         minSdk = 21
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.8"
+        versionCode = 9
+        versionName = "1.9"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     dependenciesInfo {

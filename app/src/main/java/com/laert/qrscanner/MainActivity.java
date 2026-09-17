@@ -40,16 +40,26 @@ public class MainActivity extends AppCompatActivity {
         // Handle edge-to-edge display for Samsung and other devices
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(android.R.id.content), (v, insets) -> {
-                    int bottomInset = insets.getInsets(
+                    int systemBarsBottom = insets.getInsets(
                             androidx.core.view.WindowInsetsCompat.Type.systemBars()).bottom;
+                    int imeBottom = insets.getInsets(
+                            androidx.core.view.WindowInsetsCompat.Type.ime()).bottom;
+
                     BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
-                    bottomNav.setPadding(0, 0, 0, bottomInset);
+                    bottomNav.setPadding(0, 0, 0, systemBarsBottom);
+
                     FrameLayout container = findViewById(R.id.fragmentContainer);
                     container.setPadding(0, 0, 0, 0);
                     ViewGroup.MarginLayoutParams params =
                             (ViewGroup.MarginLayoutParams) container.getLayoutParams();
-                    params.bottomMargin = 56 + bottomInset;
-                    container.setLayoutParams(params);
+                    bottomNav.post(() -> {
+                        int navHeight = bottomNav.getHeight();
+                        int bottomSpace = Math.max(imeBottom, navHeight);
+                        if (params.bottomMargin != bottomSpace) {
+                            params.bottomMargin = bottomSpace;
+                            container.setLayoutParams(params);
+                        }
+                    });
                     return insets;
                 });
 

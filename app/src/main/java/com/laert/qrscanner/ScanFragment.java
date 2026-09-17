@@ -133,6 +133,25 @@ public class ScanFragment extends Fragment {
         ImageButton btnGallery = view.findViewById(R.id.btnGallery);
         btnGallery.setOnClickListener(v -> scanFromGallery());
 
+        // Push just the two top icon buttons below the status bar; the camera preview
+        // itself stays full-bleed behind the status bar (that's the intended look).
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            int topInset = insets.getInsets(
+                    androidx.core.view.WindowInsetsCompat.Type.statusBars()).top;
+            int baseMargin = (int) (16 * v.getResources().getDisplayMetrics().density);
+            ImageButton gallery = v.findViewById(R.id.btnGallery);
+            ViewGroup.MarginLayoutParams galleryParams =
+                    (ViewGroup.MarginLayoutParams) gallery.getLayoutParams();
+            galleryParams.topMargin = baseMargin + topInset;
+            gallery.setLayoutParams(galleryParams);
+            ImageButton flash = v.findViewById(R.id.btnFlash);
+            ViewGroup.MarginLayoutParams flashParams =
+                    (ViewGroup.MarginLayoutParams) flash.getLayoutParams();
+            flashParams.topMargin = baseMargin + topInset;
+            flash.setLayoutParams(flashParams);
+            return insets;
+        });
+
         previewView = view.findViewById(R.id.previewView);
         tvResult = view.findViewById(R.id.tvResult);
         bottomSheet = view.findViewById(R.id.bottomSheet);
@@ -375,12 +394,10 @@ public class ScanFragment extends Fragment {
 
                 previewView.setOnTouchListener((view, event) -> {
 
-                    // Zoom me dy gishta
                     if (scaleGestureDetector != null) {
                         scaleGestureDetector.onTouchEvent(event);
                     }
 
-                    // Tap to Focus vetëm me një prekje
                     if (event.getPointerCount() == 1 &&
                             event.getAction() == MotionEvent.ACTION_DOWN) {
 

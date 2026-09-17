@@ -1,30 +1,36 @@
-# Privacy QR And Barcode Scanner
+# Privacy QR and Barcode Scanner
 
 ![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)
 
 
-![Version](https://img.shields.io/badge/Version-1.7-teal.svg)
+![Version](https://img.shields.io/badge/Version-1.9-teal.svg)
 
 ![Android](https://img.shields.io/badge/Android-5.0%2B-green.svg)
 
 A fast, lightweight, and fully offline QR code and barcode scanner for Android. No internet permission. No tracking. No ads.
 
 ---
-## Latest Version: 1.7
+## Latest Version: 1.9
 
 ### Changelog
 
+**Version 1.9**
+- Fixed typed text not appearing in text fields until the keyboard was closed
+- Fixed flashlight/gallery buttons, "Scan History" title and "Clear" button being hidden behind the status bar
+- Fixed Copy/Share/Scan Again buttons being partly hidden behind the bottom navigation bar
+- General edge-to-edge display fixes
+
+**Version 1.8**
+- Privacy: disabled dependency metadata in the release build
+
 **Version 1.7**
-What's new in v1.7:
-- Flashlight (Torch) support
-- Tap to Focus
-- Pinch to Zoom
-  
+- Added flashlight support
+- Added tap to focus
+- Added pinch to zoom
+
 **Version 1.6**
-What's new in v1.6:
-- Scan QR codes and barcodes from images stored on device
-- Exit dialog with share option
-  
+- Added scan from gallery feature
+
 **Version 1.5**
 Major update - Full Offline QR Toolkit!
 
@@ -92,13 +98,14 @@ No network permission is requested. No data leaves your device. No third-party S
 ![Results](fastlane/metadata/android/en-US/images/phoneScreenshots/3.png)
 
 
+
 ## Download
 
 - [GitHub Releases](https://github.com/Laert-Android/Privacy-QR-Scanner/releases)
 - [SourceForge](https://sourceforge.net/projects/privacy-qr-scanner)
 -  [XdaForums](https://xdaforums.com/t/privacy-qr-scanner-free-open-source-fast-lightweight-and-fully-offline-qr-code-barcode-scanner-for-android-no-tracking-no-ads.4792635)
   - [Appteka](https://appteka.store/apps/095r313045)
-- Officially on F-droid [F-Droid ](https://f-droid.org/en/packages/com.laert.qrscanner)
+- [F-Droid](https://f-droid.org/sq/packages/com.laert.qrscanner/)
 
 ---
 
@@ -126,11 +133,11 @@ cd Privacy-QR-And-Barcode-Scanner
 | Component | Library |
 |---|---|
 | Camera | CameraX 1.3.4 |
-| Barcode scanning | ZXing Barcode Scanning |
+| Barcode scanning | ZXing (zxing-android-embedded 4.3.0 / core 3.5.3) |
 | UI | Material Components |
 | Language | Java |
 | Min SDK | Android 5.0 (API 21) |
-| Target SDK | Android 16 (API 35) |
+| Target SDK | Android 15 (API 35) |
 
 ---
 
