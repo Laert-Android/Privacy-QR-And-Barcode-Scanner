@@ -1,0 +1,6 @@
+Release v1.9
+
+Fixed a bug where typed text wouldn't appear in text fields until the keyboard was closed
+Fixed the flashlight/gallery buttons, "Scan History" title and "Clear" button being hidden behind the status bar
+Fixed the Copy/Share/Scan Again buttons being partly hidden behind the bottom navigation bar
+General edge-to-edge display fixes

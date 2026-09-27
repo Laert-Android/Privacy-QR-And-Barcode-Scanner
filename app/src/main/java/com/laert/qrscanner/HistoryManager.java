@@ -25,6 +25,7 @@ public class HistoryManager {
         try {
             JSONArray array = new JSONArray(json);
             JSONObject item = new JSONObject();
+            item.put("id", java.util.UUID.randomUUID().toString());
             item.put("content", content);
             item.put("format", format);
             item.put("time", new SimpleDateFormat("dd MMM yyyy HH:mm",

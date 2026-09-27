@@ -18,8 +18,8 @@ android {
         applicationId = "com.laert.qrscanner"
         minSdk = 21
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.8"
+        versionCode = 10
+        versionName = "2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     dependenciesInfo {
@@ -46,6 +46,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            vcsInfo {
+                include = false
+            }
         }
     }
 

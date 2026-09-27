@@ -1,30 +1,43 @@
-# Privacy QR And Barcode Scanner
+# Privacy QR and Barcode Scanner
 
 ![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)
 
 
-![Version](https://img.shields.io/badge/Version-1.7-teal.svg)
+![Version](https://img.shields.io/badge/Version-2.0-teal.svg)
 
 ![Android](https://img.shields.io/badge/Android-5.0%2B-green.svg)
 
 A fast, lightweight, and fully offline QR code and barcode scanner for Android. No internet permission. No tracking. No ads.
 
 ---
-## Latest Version: 1.7
+## Latest Version: 2.0
 
 ### Changelog
 
+**Version 2.0**
+- Fixed dense/high-version QR codes failing to scan (higher camera analysis resolution + a row-stride bug that could skew the image on some devices)
+- Gallery scanning now decodes images at full resolution instead of relying on the old, inconsistent system decoder
+- Fixed Copy/Share/Open/Scan Again buttons wrapping onto multiple lines
+- Scan history entries now have a unique ID, so two scans of the same code in the same minute are no longer indistinguishable
+- Thanks to [fucaijin](https://github.com/fucaijin) for finding these issues
+
+**Version 1.9**
+- Fixed typed text not appearing in text fields until the keyboard was closed
+- Fixed flashlight/gallery buttons, "Scan History" title and "Clear" button being hidden behind the status bar
+- Fixed Copy/Share/Scan Again buttons being partly hidden behind the bottom navigation bar
+- General edge-to-edge display fixes
+
+**Version 1.8**
+- Privacy: disabled dependency metadata in the release build
+
 **Version 1.7**
-What's new in v1.7:
-- Flashlight (Torch) support
-- Tap to Focus
-- Pinch to Zoom
-  
+- Added flashlight support
+- Added tap to focus
+- Added pinch to zoom
+
 **Version 1.6**
-What's new in v1.6:
-- Scan QR codes and barcodes from images stored on device
-- Exit dialog with share option
-  
+- Added scan from gallery feature
+
 **Version 1.5**
 Major update - Full Offline QR Toolkit!
 
@@ -81,7 +94,7 @@ No network permission is requested. No data leaves your device. No third-party S
 - [GitHub Releases](https://github.com/Laert-Android/Privacy-QR-Scanner/releases)
 - [SourceForge](https://sourceforge.net/projects/privacy-qr-scanner)
 -  [XdaForums](https://xdaforums.com/t/privacy-qr-scanner-free-open-source-fast-lightweight-and-fully-offline-qr-code-barcode-scanner-for-android-no-tracking-no-ads.4792635)
-  - [Appteka](https://appteka.store/app/c83r310090)
+  - [Appteka](https://appteka.store/apps/871r296920?from=search&q=Privacy%20QR%20Scanner)
 - F-Droid *(coming soon)*
 
 ---
@@ -110,11 +123,11 @@ cd Privacy-QR-And-Barcode-Scanner
 | Component | Library |
 |---|---|
 | Camera | CameraX 1.3.4 |
-| Barcode scanning | ZXing Barcode Scanning |
+| Barcode scanning | ZXing (zxing-android-embedded 4.3.0 / core 3.5.3) |
 | UI | Material Components |
 | Language | Java |
 | Min SDK | Android 5.0 (API 21) |
-| Target SDK | Android 16 (API 35) |
+| Target SDK | Android 15 (API 35) |
 
 ---
 

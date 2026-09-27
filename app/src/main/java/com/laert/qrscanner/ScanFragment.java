@@ -30,6 +30,8 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
+import androidx.camera.core.resolutionselector.ResolutionSelector;
+import androidx.camera.core.resolutionselector.ResolutionStrategy;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
@@ -99,8 +101,7 @@ public class ScanFragment extends Fragment {
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null) {
             try {
                 Uri imageUri = data.getData();
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(
-                        requireActivity().getContentResolver(), imageUri);
+                Bitmap bitmap = decodeGalleryBitmap(imageUri);
 
                 int width = bitmap.getWidth();
                 int height = bitmap.getHeight();
@@ -132,6 +133,25 @@ public class ScanFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         ImageButton btnGallery = view.findViewById(R.id.btnGallery);
         btnGallery.setOnClickListener(v -> scanFromGallery());
+
+        // Push just the two top icon buttons below the status bar; the camera preview
+        // itself stays full-bleed behind the status bar (that's the intended look).
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            int topInset = insets.getInsets(
+                    androidx.core.view.WindowInsetsCompat.Type.statusBars()).top;
+            int baseMargin = (int) (16 * v.getResources().getDisplayMetrics().density);
+            ImageButton gallery = v.findViewById(R.id.btnGallery);
+            ViewGroup.MarginLayoutParams galleryParams =
+                    (ViewGroup.MarginLayoutParams) gallery.getLayoutParams();
+            galleryParams.topMargin = baseMargin + topInset;
+            gallery.setLayoutParams(galleryParams);
+            ImageButton flash = v.findViewById(R.id.btnFlash);
+            ViewGroup.MarginLayoutParams flashParams =
+                    (ViewGroup.MarginLayoutParams) flash.getLayoutParams();
+            flashParams.topMargin = baseMargin + topInset;
+            flash.setLayoutParams(flashParams);
+            return insets;
+        });
 
         previewView = view.findViewById(R.id.previewView);
         tvResult = view.findViewById(R.id.tvResult);
@@ -232,6 +252,28 @@ public class ScanFragment extends Fragment {
         startActivityForResult(intent, PICK_IMAGE_REQUEST);
     }
 
+    // Cap only truly huge photos (e.g. 40MP+) to avoid an OOM crash — this is far above
+    // the resolution any dense QR/barcode needs, so ordinary photos are never downsampled.
+    private static final int MAX_GALLERY_DIMENSION = 4096;
+
+    private Bitmap decodeGalleryBitmap(Uri imageUri) throws java.io.IOException {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            android.graphics.ImageDecoder.Source src = android.graphics.ImageDecoder.createSource(
+                    requireActivity().getContentResolver(), imageUri);
+            return android.graphics.ImageDecoder.decodeBitmap(src, (decoder, info, source) -> {
+                decoder.setAllocator(android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE);
+                int w = info.getSize().getWidth();
+                int h = info.getSize().getHeight();
+                int longest = Math.max(w, h);
+                if (longest > MAX_GALLERY_DIMENSION) {
+                    float scale = MAX_GALLERY_DIMENSION / (float) longest;
+                    decoder.setTargetSize(Math.round(w * scale), Math.round(h * scale));
+                }
+            });
+        }
+        return MediaStore.Images.Media.getBitmap(requireActivity().getContentResolver(), imageUri);
+    }
+
     private void startScanAnimation() {
         android.animation.ObjectAnimator animator = android.animation.ObjectAnimator.ofFloat(
                 scanLine, "translationY", -125f, 125f);
@@ -252,9 +294,15 @@ public class ScanFragment extends Fragment {
 
                 Preview preview = new Preview.Builder().build();
                 preview.setSurfaceProvider(previewView.getSurfaceProvider());
+                ResolutionSelector resolutionSelector = new ResolutionSelector.Builder()
+                        .setResolutionStrategy(new ResolutionStrategy(
+                                new android.util.Size(1920, 1440),
+                                ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER))
+                        .build();
 
                 ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .setResolutionSelector(resolutionSelector)
                         .build();
 
                 imageAnalysis.setAnalyzer(cameraExecutor, (ImageProxy imageProxy) -> {
@@ -270,20 +318,26 @@ public class ScanFragment extends Fragment {
                         try {
                             android.media.Image.Plane[] planes = mediaImage.getPlanes();
                             ByteBuffer yBuffer = planes[0].getBuffer();
-                            ByteBuffer uBuffer = planes[1].getBuffer();
-                            ByteBuffer vBuffer = planes[2].getBuffer();
-
-                            int ySize = yBuffer.remaining();
-                            int uSize = uBuffer.remaining();
-                            int vSize = vBuffer.remaining();
-
-                            byte[] nv21 = new byte[ySize + uSize + vSize];
-                            yBuffer.get(nv21, 0, ySize);
-                            vBuffer.get(nv21, ySize, vSize);
-                            uBuffer.get(nv21, ySize + vSize, uSize);
+                            int yRowStride = planes[0].getRowStride();
+                            int yPixelStride = planes[0].getPixelStride();
 
                             int width = mediaImage.getWidth();
                             int height = mediaImage.getHeight();
+                            byte[] yData = new byte[width * height];
+                            if (yRowStride == width && yPixelStride == 1) {
+                                yBuffer.get(yData, 0, width * height);
+                            } else {
+                                byte[] rowBuffer = new byte[yRowStride];
+                                for (int row = 0; row < height; row++) {
+                                    yBuffer.position(row * yRowStride);
+                                    int rowLength = Math.min(yRowStride, yBuffer.remaining());
+                                    yBuffer.get(rowBuffer, 0, rowLength);
+                                    for (int col = 0; col < width; col++) {
+                                        yData[row * width + col] = rowBuffer[col * yPixelStride];
+                                    }
+                                }
+                            }
+
                             int rotation = imageProxy.getImageInfo().getRotationDegrees();
 
                             Result result = null;
@@ -292,13 +346,13 @@ public class ScanFragment extends Fragment {
                                 try {
                                     PlanarYUVLuminanceSource source;
                                     if (rot == 90 || rot == 270) {
-                                        byte[] rotatedData = new byte[nv21.length];
+                                        byte[] rotatedData = new byte[width * height];
                                         for (int y = 0; y < height; y++) {
                                             for (int x = 0; x < width; x++) {
                                                 if (rot == 90) {
-                                                    rotatedData[x * height + height - y - 1] = nv21[y * width + x];
+                                                    rotatedData[x * height + height - y - 1] = yData[y * width + x];
                                                 } else {
-                                                    rotatedData[(width - x - 1) * height + y] = nv21[y * width + x];
+                                                    rotatedData[(width - x - 1) * height + y] = yData[y * width + x];
                                                 }
                                             }
                                         }
@@ -306,7 +360,7 @@ public class ScanFragment extends Fragment {
                                                 rotatedData, height, width, 0, 0, height, width, false);
                                     } else {
                                         source = new PlanarYUVLuminanceSource(
-                                                nv21, width, height, 0, 0, width, height, false);
+                                                yData, width, height, 0, 0, width, height, false);
                                     }
                                     BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
                                     result = reader.decode(bitmap);
@@ -375,12 +429,9 @@ public class ScanFragment extends Fragment {
 
                 previewView.setOnTouchListener((view, event) -> {
 
-                    // Zoom me dy gishta
                     if (scaleGestureDetector != null) {
                         scaleGestureDetector.onTouchEvent(event);
                     }
-
-                    // Tap to Focus vetëm me një prekje
                     if (event.getPointerCount() == 1 &&
                             event.getAction() == MotionEvent.ACTION_DOWN) {
 

@@ -1,0 +1,5 @@
+Fixed dense/high-version QR codes failing to scan — the camera now analyzes at a much higher resolution and a row-stride bug that could skew the image on some devices is fixed
+Gallery scanning now decodes images at full resolution instead of relying on the old, inconsistent system decoder
+Fixed the Copy/Share/Open/Scan Again buttons wrapping onto multiple lines
+Scan history entries now have a unique ID, so two scans of the same code in the same minute are no longer indistinguishable
+Thanks to fucaijin for finding these issues

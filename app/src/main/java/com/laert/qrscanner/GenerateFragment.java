@@ -49,6 +49,13 @@ public class GenerateFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            int topInset = insets.getInsets(
+                    androidx.core.view.WindowInsetsCompat.Type.statusBars()).top;
+            v.setPadding(v.getPaddingLeft(), topInset, v.getPaddingRight(), v.getPaddingBottom());
+            return insets;
+        });
+
         etInput = view.findViewById(R.id.etInput);
         ivQRCode = view.findViewById(R.id.ivQRCode);
         spinnerType = view.findViewById(R.id.spinnerType);
