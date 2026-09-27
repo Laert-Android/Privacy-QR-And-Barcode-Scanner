@@ -10,6 +10,7 @@
 A fast, lightweight, and fully offline QR code and barcode scanner for Android. No internet permission. No tracking. No ads.
 
 ---
+
 ## Latest Version: 2.0
 
 ### Changelog
@@ -88,14 +89,31 @@ This app requests only one permission:
 No network permission is requested. No data leaves your device. No third-party SDKs with telemetry are active.
 
 ---
+## Screenshots
+
+
+
+![Results](fastlane/metadata/android/en-US/images/phoneScreenshots/1.png)
+
+
+
+
+![Results](fastlane/metadata/android/en-US/images/phoneScreenshots/2.png)
+
+
+
+
+![Results](fastlane/metadata/android/en-US/images/phoneScreenshots/3.png)
+
+
 
 ## Download
 
 - [GitHub Releases](https://github.com/Laert-Android/Privacy-QR-Scanner/releases)
 - [SourceForge](https://sourceforge.net/projects/privacy-qr-scanner)
 -  [XdaForums](https://xdaforums.com/t/privacy-qr-scanner-free-open-source-fast-lightweight-and-fully-offline-qr-code-barcode-scanner-for-android-no-tracking-no-ads.4792635)
-  - [Appteka](https://appteka.store/apps/871r296920?from=search&q=Privacy%20QR%20Scanner)
-- F-Droid *(coming soon)*
+  - [Appteka](https://appteka.store/app/9dfr321525)
+- [F-Droid](https://f-droid.org/sq/packages/com.laert.qrscanner/)
 
 ---
 
