@@ -114,9 +114,8 @@ No network permission is requested. No data leaves your device. No third-party S
   - [Appteka](https://appteka.store/app/867r324856)
 - [F-Droid](https://f-droid.org/sq/packages/com.laert.qrscanner/)
 =======
-  - [Appteka](https://appteka.store/apps/871r296920?from=search&q=Privacy%20QR%20Scanner)
+  - [Appteka](https://appteka.store/app/5c3r326715)
 - F-Droid *(coming soon)*
->>>>>>> Stashed changes
 
 ---
 
