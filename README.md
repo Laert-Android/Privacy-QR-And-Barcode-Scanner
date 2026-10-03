@@ -9,11 +9,6 @@
 
 A fast, lightweight, and fully offline QR code and barcode scanner for Android. No internet permission. No tracking. No ads.
 
----
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 ## Latest Version: 2.0
 
 ### Changelog
