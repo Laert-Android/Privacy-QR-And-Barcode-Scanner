@@ -1,0 +1,2 @@
+Fixed the app icon not showing on Android versions older than 8.0 (a default placeholder icon was used there instead of the real one)
+Release builds are now fully reproducible: disabled incremental Java compilation and added a releaseApk Gradle task that always does a clean build.

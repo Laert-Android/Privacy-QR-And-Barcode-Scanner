@@ -36,8 +36,6 @@ public class MainActivity extends AppCompatActivity {
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        // Handle edge-to-edge display for Samsung and other devices
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(android.R.id.content), (v, insets) -> {
                     int systemBarsBottom = insets.getInsets(

@@ -62,6 +62,22 @@ android {
     }
 }
 
+tasks.withType<JavaCompile>().configureEach {
+    options.isIncremental = false
+}
+
+tasks.matching { it.name == "assembleRelease" }.configureEach {
+    mustRunAfter("clean")
+}
+
+tasks.register("releaseApk") {
+    group = "build"
+    description = "Clean, then build the release APK from scratch. Use this (not " +
+            "assembleRelease directly) for any APK that will be published/compared " +
+            "against an F-Droid build."
+    dependsOn("clean", "assembleRelease")
+}
+
 dependencies {
     implementation("androidx.camera:camera-core:1.3.4")
     implementation("androidx.camera:camera-camera2:1.3.4")

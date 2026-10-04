@@ -52,7 +52,6 @@ public class QRScannerTileService extends TileService {
                     this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
             startActivityAndCollapse(pendingIntent);
         } else {
-            //noinspection deprecation
             startActivityAndCollapse(intent);
         }
     }

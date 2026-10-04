@@ -3,20 +3,20 @@
 ![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)
 
 
-![Version](https://img.shields.io/badge/Version-2.0-teal.svg)
+![Version](https://img.shields.io/badge/Version-2.1-teal.svg)
 
 ![Android](https://img.shields.io/badge/Android-5.0%2B-green.svg)
 
 A fast, lightweight, and fully offline QR code and barcode scanner for Android. No internet permission. No tracking. No ads.
 
 ---
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
-## Latest Version: 2.0
+## Latest Version: 2.1
 
 ### Changelog
+
+**Version 2.1**
+- Fixed the app icon not showing on Android versions older than 8.0 (a default placeholder icon was used there instead of the real one)
+- Release builds are now fully reproducible: disabled incremental Java compilation and added a releaseApk Gradle task that always does a clean build
 
 **Version 2.0**
 - Fixed dense/high-version QR codes failing to scan (higher camera analysis resolution + a row-stride bug that could skew the image on some devices)
@@ -92,36 +92,14 @@ This app requests only one permission:
 No network permission is requested. No data leaves your device. No third-party SDKs with telemetry are active.
 
 ---
-## Screenshots
-
-
-
-![Results](fastlane/metadata/android/en-US/images/phoneScreenshots/1.png)
-
-
-
-
-![Results](fastlane/metadata/android/en-US/images/phoneScreenshots/2.png)
-
-
-
-
-![Results](fastlane/metadata/android/en-US/images/phoneScreenshots/3.png)
-
-
 
 ## Download
 
 - [GitHub Releases](https://github.com/Laert-Android/Privacy-QR-Scanner/releases)
 - [SourceForge](https://sourceforge.net/projects/privacy-qr-scanner)
 -  [XdaForums](https://xdaforums.com/t/privacy-qr-scanner-free-open-source-fast-lightweight-and-fully-offline-qr-code-barcode-scanner-for-android-no-tracking-no-ads.4792635)
-<<<<<<< Updated upstream
-  - [Appteka](https://appteka.store/app/867r324856)
-- [F-Droid](https://f-droid.org/sq/packages/com.laert.qrscanner/)
-=======
   - [Appteka](https://appteka.store/apps/871r296920?from=search&q=Privacy%20QR%20Scanner)
-- F-Droid *(coming soon)*
->>>>>>> Stashed changes
+  - [F-droid](https://f-droid.org/sq/packages/com.laert.qrscanner)
 
 ---
 
