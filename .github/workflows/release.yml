@@ -1,10 +1,5 @@
 name: Release Build
 
-# Builds the signed release APK on Linux (ubuntu-latest) whenever a version
-# tag (v1.0, v2.2, ...) is pushed. This exists so the APK used as the
-# F-Droid "reference" binary is always built the same way, on the same OS
-# family F-Droid itself builds on — never from a local Windows machine.
-
 on:
   push:
     tags:
