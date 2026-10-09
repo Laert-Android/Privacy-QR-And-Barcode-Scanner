@@ -72,9 +72,7 @@ tasks.matching { it.name == "assembleRelease" }.configureEach {
 
 tasks.register("releaseApk") {
     group = "build"
-    description = "Clean, then build the release APK from scratch. Use this (not " +
-            "assembleRelease directly) for any APK that will be published/compared " +
-            "against an F-Droid build."
+    description = "Clean, then build the release APK from scratch."
     dependsOn("clean", "assembleRelease")
 }
 
