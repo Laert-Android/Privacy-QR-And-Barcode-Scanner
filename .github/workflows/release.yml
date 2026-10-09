@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -21,17 +22,34 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > qrscanner-new.jks
-
-      - name: Write keystore.properties
+      - name: Write keystore and keystore.properties
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          cat > keystore.properties << EOF
-          storeFile=qrscanner-new.jks
-          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-          keyAlias=${{ secrets.KEY_ALIAS }}
-          keyPassword=${{ secrets.KEY_PASSWORD }}
-          EOF
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > qrscanner-new.jks
+          {
+            echo "storeFile=qrscanner-new.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > keystore.properties
+
+      - name: Verify signing inputs (fails early with a clear message)
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          pwd
+          ls -la qrscanner-new.jks keystore.properties
+          test -s qrscanner-new.jks || { echo "::error::qrscanner-new.jks is missing or empty - check the KEYSTORE_BASE64 secret"; exit 1; }
+          test -n "$KEYSTORE_PASSWORD" || { echo "::error::KEYSTORE_PASSWORD secret is empty or misnamed"; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "::error::KEY_ALIAS secret is empty or misnamed"; exit 1; }
+          keytool -list -keystore qrscanner-new.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null 2>&1 \
+            || { echo "::error::keystore cannot be opened with these secrets - KEYSTORE_BASE64 is corrupted, or the password/alias is wrong"; exit 1; }
+          echo "Keystore opens fine and alias exists."
 
       - name: Build release APK (clean, from scratch)
         run: ./gradlew releaseApk
