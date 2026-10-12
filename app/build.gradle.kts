@@ -48,6 +48,8 @@ android {
             )
             // AGP embeds META-INF/version-control-info.textproto (the exact git commit
             // of the build tree) by default since AGP 8.3. Its content depends on the
+            // build environment, not just the source, so two otherwise-identical builds
+            // from slightly different tree states (a fresh CI clone vs. a local IDE
             // checkout) end up with different bytes and fail F-Droid's reproducible-build
             // comparison. Disabling it removes that whole failure mode.
             vcsInfo {
