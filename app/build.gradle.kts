@@ -30,7 +30,7 @@ android {
     signingConfigs {
         create("release") {
             if (keystorePropertiesFile.exists()) {
-                storeFile = file(keystoreProperties["storeFile"] as String)
+                storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
                 storePassword = keystoreProperties["storePassword"] as String
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
@@ -72,7 +72,9 @@ tasks.matching { it.name == "assembleRelease" }.configureEach {
 
 tasks.register("releaseApk") {
     group = "build"
-    description = "Clean, then build the release APK from scratch."
+    description = "Clean, then build the release APK from scratch. Use this" +
+            "for any APK that will be published/compared " +
+            "against an F-Droid build."
     dependsOn("clean", "assembleRelease")
 }
 
