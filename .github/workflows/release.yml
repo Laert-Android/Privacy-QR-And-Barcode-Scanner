@@ -50,6 +50,9 @@ jobs:
             || { echo "::error::keystore cannot be opened with these secrets - KEYSTORE_BASE64 is corrupted, or the password/alias is wrong"; exit 1; }
           echo "Keystore opens fine and alias exists."
 
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - name: Build release APK (clean, from scratch)
         run: ./gradlew releaseApk
 
@@ -61,5 +64,3 @@ jobs:
         with:
           name: app-release
           path: app/build/outputs/apk/release/app-release.apk
-
-          
