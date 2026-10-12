@@ -46,6 +46,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // AGP embeds META-INF/version-control-info.textproto (the exact git commit
+            // of the build tree) by default since AGP 8.3. Its content depends on the
+            // checkout) end up with different bytes and fail F-Droid's reproducible-build
+            // comparison. Disabling it removes that whole failure mode.
             vcsInfo {
                 include = false
             }
@@ -62,18 +66,29 @@ android {
     }
 }
 
+// Gradle's incremental Java compiler reuses .class files from earlier compiles in the
+// same project directory. Over a long local dev session (many edits across many files,
+// never fully cleaned) this can leave D8 numbering synthetic lambda classes
+// (...$$ExternalSyntheticLambda<N>, lambda$method$<N>) differently than a true
+// from-scratch compile of the exact same source — which is what broke the v2.0
+// reproducible-build check even after the vcsInfo fix. Turning incremental compilation
+// off removes that source of drift entirely, build after build.
 tasks.withType<JavaCompile>().configureEach {
     options.isIncremental = false
 }
 
+// A release APK must always come from a from-scratch compile, never a reused/incremental
+// one — this is exactly what went wrong with the v2.0 reference APK. `releaseApk` makes
+// that the only way to produce one: `clean` always runs fully before `assembleRelease`
+// starts, in that strict order, every time.
 tasks.matching { it.name == "assembleRelease" }.configureEach {
     mustRunAfter("clean")
 }
 
 tasks.register("releaseApk") {
     group = "build"
-    description = "Clean, then build the release APK from scratch. Use this" +
-            "for any APK that will be published/compared " +
+    description = "Clean, then build the release APK from scratch. Use this (not " +
+            "assembleRelease directly) for any APK that will be published/compared " +
             "against an F-Droid build."
     dependsOn("clean", "assembleRelease")
 }
