@@ -63,7 +63,6 @@ All features work 100% offline - no internet permission
 **Version 1.2**
 - Added Quick Settings Tile for instant access from notification shade
 - Bug fixes and improvements
-- 
 **Version 1.1**
 - Animated scan line
 - Smart QR detection (URL, Email, SMS, Phone, WiFi, Location)
