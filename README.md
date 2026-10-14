@@ -59,16 +59,17 @@ All features work 100% offline - no internet permission
 - New signing key (previous key was exposed in build config)
 - Signing credentials moved to local keystore.properties (not tracked by git)
 - Quick Settings Tile improvements
-- 
+  
 **Version 1.2**
 - Added Quick Settings Tile for instant access from notification shade
 - Bug fixes and improvements
+  
 **Version 1.1**
 - Animated scan line
 - Smart QR detection (URL, Email, SMS, Phone, WiFi, Location)
 - Replaced ML Kit with ZXing (fully open source, no tracking)
 - Bug fixes and improvements
-- 
+  
 ## Features
 
 - Scan QR codes and barcodes instantly using your camera
