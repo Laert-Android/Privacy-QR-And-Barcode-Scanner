@@ -53,6 +53,11 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      - name: Debug - what did CI actually check out?
+        run: |
+          git log -1 --format='commit: %h %s'
+          grep -n "storeFile\|versionCode" app/build.gradle.kts
+
       - name: Build release APK (clean, from scratch)
         run: ./gradlew releaseApk
 
