@@ -5,13 +5,26 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag or commit to build, e.g. v2.2 (empty = the branch you run this from)'
+        required: false
+        default: ''
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout exact tagged commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Show exactly what is being built
+        run: |
+          git rev-parse HEAD
+          git describe --tags --always
+          grep -n "storeFile\|versionCode\|versionName\|vcsInfo\|isIncremental" app/build.gradle.kts
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -35,6 +48,9 @@ jobs:
             echo "keyAlias=$KEY_ALIAS"
             echo "keyPassword=$KEY_PASSWORD"
           } > keystore.properties
+          # Older build scripts resolve the keystore relative to app/ instead of the repo
+          # root. Provide it in both places so any tagged version of the project signs.
+          cp qrscanner-new.jks app/qrscanner-new.jks
 
       - name: Verify signing inputs (fails early with a clear message)
         env:
@@ -52,11 +68,6 @@ jobs:
 
       - name: Make gradlew executable
         run: chmod +x gradlew
-
-      - name: Debug - what did CI actually check out?
-        run: |
-          git log -1 --format='commit: %h %s'
-          grep -n "storeFile\|versionCode" app/build.gradle.kts
 
       - name: Build release APK (clean, from scratch)
         run: ./gradlew releaseApk
