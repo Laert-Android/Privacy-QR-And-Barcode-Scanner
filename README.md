@@ -3,16 +3,28 @@
 ![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)
 
 
-![Version](https://img.shields.io/badge/Version-2.1-teal.svg)
+![Version](https://img.shields.io/badge/Version-2.2-teal.svg)
 
 ![Android](https://img.shields.io/badge/Android-5.0%2B-green.svg)
 
 A fast, lightweight, and fully offline QR code and barcode scanner for Android. No internet permission. No tracking. No ads.
 
 ---
-## Latest Version: 2.1
+## Latest Version: 2.2
 
 ### Changelog
+
+**Version 2.2**
+- Scan from Share: pick "Privacy QR" in the Share sheet of the gallery or any app to scan a shared picture without opening the picker. Only content:// pictures are accepted
+- The camera now starts right after you grant the permission for the first time (it used to stay blank until you switched tabs)
+- Albanian (Shqip) translation and a new Settings tab with an in-app language choice (system default, English or Albanian)
+- Smart actions by result type: Wi-Fi codes copy the password (marked sensitive) and open Wi-Fi settings; contact (vCard/MECARD) and calendar event codes now pre-fill the new contact/event; SMS and email codes (including SMSTO and MATMSG) pre-fill the message
+- Offline link safety warnings: shortened links, raw IP addresses, look-alike/punycode domains, "@" tricks and plain http:// are flagged before opening
+- Generator: besides QR, create Code 128, Code 39, EAN-13, EAN-8, UPC-A, UPC-E, ITF, Codabar, PDF417, Aztec and Data Matrix, with per-format input checks
+- Save generated codes as lossless PNG (system file picker, no storage permission) and share them as PNG without adding anything to the gallery
+- Wi-Fi QR codes now use the standard "nopass" type and escape special characters in the name/password
+- Fixed plain text containing a dot or an "@" being mistaken for a link or email
+- Actions no longer crash when no app can handle them
 
 **Version 2.1**
 - Fixed the app icon not showing on Android versions older than 8.0 (a default placeholder icon was used there instead of the real one)
@@ -59,17 +71,17 @@ All features work 100% offline - no internet permission
 - New signing key (previous key was exposed in build config)
 - Signing credentials moved to local keystore.properties (not tracked by git)
 - Quick Settings Tile improvements
-  
+- 
 **Version 1.2**
 - Added Quick Settings Tile for instant access from notification shade
 - Bug fixes and improvements
-  
+- 
 **Version 1.1**
 - Animated scan line
 - Smart QR detection (URL, Email, SMS, Phone, WiFi, Location)
 - Replaced ML Kit with ZXing (fully open source, no tracking)
 - Bug fixes and improvements
-  
+- 
 ## Features
 
 - Scan QR codes and barcodes instantly using your camera
@@ -98,7 +110,7 @@ No network permission is requested. No data leaves your device. No third-party S
 - [GitHub Releases](https://github.com/Laert-Android/Privacy-QR-Scanner/releases)
 - [SourceForge](https://sourceforge.net/projects/privacy-qr-scanner)
 -  [XdaForums](https://xdaforums.com/t/privacy-qr-scanner-free-open-source-fast-lightweight-and-fully-offline-qr-code-barcode-scanner-for-android-no-tracking-no-ads.4792635)
-  - [Appteka](https://appteka.store/app/5c3r326715)
+  - [Appteka](https://appteka.store/apps/871r296920?from=search&q=Privacy%20QR%20Scanner)
   - [F-droid](https://f-droid.org/sq/packages/com.laert.qrscanner)
 
 ---

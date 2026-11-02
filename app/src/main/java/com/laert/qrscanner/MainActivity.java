@@ -1,33 +1,34 @@
 package com.laert.qrscanner;
 
 import android.os.Bundle;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import android.widget.FrameLayout;
 import android.view.ViewGroup;
 import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 
 public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
         new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Thanks for using Privacy QR And Barcode Scanner!")
-                .setMessage("If you like this app,please share my github project with your friends and family!\n\nHave a great day! 😊")
-                .setPositiveButton("Share", (dialog, which) -> {
+                .setTitle(R.string.exit_title)
+                .setMessage(R.string.exit_message)
+                .setPositiveButton(R.string.share, (dialog, which) -> {
                     Intent shareIntent = new Intent(Intent.ACTION_SEND);
                     shareIntent.setType("text/plain");
-                    shareIntent.putExtra(Intent.EXTRA_TEXT,
-                            "Check out Privacy QR and Barcode Scanner - a free, offline QR toolkit!\n" +
-                                    "No tracking, no ads, no internet permission.\n\n" +
-                                    "Download: https://github.com/Laert-Android/Privacy-QR-And-Barcode-Scanner");
-                    startActivity(Intent.createChooser(shareIntent, "Share via"));
+                    shareIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.share_app_text,
+                            "https://github.com/Laert-Android/Privacy-QR-And-Barcode-Scanner"));
+                    startActivity(Intent.createChooser(shareIntent, getString(R.string.share_via)));
                 })
-                .setNegativeButton("Exit", (dialog, which) -> {
+                .setNegativeButton(R.string.exit, (dialog, which) -> {
                     super.onBackPressed();
                 })
-                .setNeutralButton("Cancel", null)
+                .setNeutralButton(R.string.cancel, null)
                 .show();
     }
 
@@ -36,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Handle edge-to-edge display for Samsung and other devices
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(android.R.id.content), (v, insets) -> {
                     int systemBarsBottom = insets.getInsets(
@@ -63,9 +66,10 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
 
-        // Load scan fragment by default
         if (savedInstanceState == null) {
-            loadFragment(new ScanFragment());
+            Uri sharedImage = sharedImageFrom(getIntent());
+            loadFragment(sharedImage != null
+                    ? ScanFragment.newInstanceForImage(sharedImage) : new ScanFragment());
         }
 
         bottomNav.setOnItemSelectedListener(item -> {
@@ -79,9 +83,32 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.nav_history) {
                 loadFragment(new HistoryFragment());
                 return true;
+            } else if (id == R.id.nav_settings) {
+                loadFragment(new SettingsFragment());
+                return true;
             }
             return false;
         });
+    }
+
+    @Nullable
+    private Uri sharedImageFrom(@Nullable Intent intent) {
+        if (intent == null || !Intent.ACTION_SEND.equals(intent.getAction())) return null;
+        String type = intent.getType();
+        if (type == null || !type.startsWith("image/")) return null;
+        try {
+            Uri uri = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    ? intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri.class)
+                    : legacyStreamExtra(intent);
+            return uri != null && "content".equals(uri.getScheme()) ? uri : null;
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static Uri legacyStreamExtra(Intent intent) {
+        return intent.getParcelableExtra(Intent.EXTRA_STREAM);
     }
 
     private void loadFragment(Fragment fragment) {

@@ -48,7 +48,7 @@
         android:layout_margin="16dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_flash_off"
-        android:contentDescription="Flash"
+        android:contentDescription="@string/flash"
         android:tint="#FFFFFF"/>
 
     <!-- Bottom Sheet -->
@@ -79,6 +79,15 @@
             android:paddingTop="4dp"
             android:paddingBottom="12dp"
             android:text=""/>
+
+        <TextView
+            android:id="@+id/tvWarning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFB74D"
+            android:textSize="13sp"
+            android:paddingBottom="12dp"
+            android:visibility="gone"/>
 
         <LinearLayout
             android:layout_width="match_parent"

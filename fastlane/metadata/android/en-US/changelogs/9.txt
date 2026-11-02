@@ -1,0 +1,6 @@
+Scan from Share: send a picture to Privacy QR from the gallery or any app
+Albanian translation and in-app language choice
+Generate Code 128, Code 39, EAN, UPC, ITF, Codabar, PDF417, Aztec and Data Matrix; save and share codes as lossless PNG
+Smart actions: Wi-Fi password copy, contact, event, SMS and email prefill
+Offline link warnings (shortened, IP, look-alike, http)
+Camera starts right after granting permission

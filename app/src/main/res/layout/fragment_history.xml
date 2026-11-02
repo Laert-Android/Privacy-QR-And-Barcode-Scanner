@@ -15,7 +15,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Scan History"
+            android:text="@string/scan_history"
             android:textColor="#FFFFFF"
             android:textSize="22sp"
             android:textStyle="bold"/>
@@ -24,7 +24,7 @@
             android:id="@+id/btnClear"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Clear"
+            android:text="@string/clear"
             android:background="@drawable/btn_scan_again"
             android:textColor="#FFFFFF"/>
 
@@ -34,7 +34,7 @@
         android:id="@+id/tvEmpty"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="No scan history yet"
+        android:text="@string/no_history"
         android:textColor="#AAAAAA"
         android:textSize="16sp"
         android:gravity="center"

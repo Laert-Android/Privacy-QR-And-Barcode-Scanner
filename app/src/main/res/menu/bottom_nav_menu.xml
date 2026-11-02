@@ -4,16 +4,21 @@
     <item
         android:id="@+id/nav_scan"
         android:icon="@drawable/ic_qr_tile"
-        android:title="Scan"/>
+        android:title="@string/nav_scan"/>
 
     <item
         android:id="@+id/nav_generate"
         android:icon="@drawable/ic_generate"
-        android:title="Generate"/>
+        android:title="@string/nav_generate"/>
 
     <item
         android:id="@+id/nav_history"
         android:icon="@drawable/ic_history"
-        android:title="History"/>
+        android:title="@string/nav_history"/>
+
+    <item
+        android:id="@+id/nav_settings"
+        android:icon="@drawable/ic_settings"
+        android:title="@string/nav_settings"/>
 
 </menu>

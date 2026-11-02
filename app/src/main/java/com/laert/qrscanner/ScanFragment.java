@@ -1,6 +1,9 @@
 package com.laert.qrscanner;
 
 import android.Manifest;
+import android.content.ActivityNotFoundException;
+import android.content.ClipDescription;
+import android.os.PersistableBundle;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -23,6 +26,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.DateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
@@ -72,9 +81,23 @@ import android.widget.ImageButton;
 public class ScanFragment extends Fragment {
 
     private static final int PICK_IMAGE_REQUEST = 200;
-    private static final int CAMERA_PERMISSION_REQUEST = 100;
+    static final String ARG_SHARED_IMAGE = "shared_image_uri";
+
+    static ScanFragment newInstanceForImage(Uri imageUri) {
+        ScanFragment fragment = new ScanFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_SHARED_IMAGE, imageUri.toString());
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    private final ActivityResultLauncher<String> cameraPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(), granted -> {
+                if (granted && isAdded() && getView() != null && this.camera == null) startCamera();
+            });
     private PreviewView previewView;
     private TextView tvResult;
+    private TextView tvWarning;
     private LinearLayout bottomSheet;
     private Button btnCopy, btnShare, btnScanAgain, btnOpen;
     private View scanLine;
@@ -98,33 +121,45 @@ public class ScanFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null) {
-            try {
-                Uri imageUri = data.getData();
-                Bitmap bitmap = decodeGalleryBitmap(imageUri);
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK
+                && data != null && data.getData() != null) {
+            scanImageUri(data.getData());
+        }
+    }
 
-                int width = bitmap.getWidth();
-                int height = bitmap.getHeight();
-                int[] pixels = new int[width * height];
-                bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+    private boolean scanImageUri(Uri imageUri) {
+        try {
+            Bitmap bitmap = decodeGalleryBitmap(imageUri);
 
-                RGBLuminanceSource source = new RGBLuminanceSource(width, height, pixels);
-                BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            int[] pixels = new int[width * height];
+            bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
 
-                Result result = reader.decode(binaryBitmap);
-                if (result != null) {
-                    lastResult = result.getText();
-                    String format = result.getBarcodeFormat().toString();
-                    HistoryManager.save(requireContext(), lastResult, format);
-                    requireActivity().runOnUiThread(() -> handleResult(lastResult));
-                }
-            } catch (NotFoundException e) {
-                Toast.makeText(requireContext(), "No QR code found in image",
-                        Toast.LENGTH_SHORT).show();
-            } catch (Exception e) {
-                Toast.makeText(requireContext(), "Error reading image",
-                        Toast.LENGTH_SHORT).show();
-            }
+            RGBLuminanceSource source = new RGBLuminanceSource(width, height, pixels);
+            BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
+
+            Result result = new MultiFormatReader().decode(binaryBitmap);
+            lastResult = result.getText();
+            HistoryManager.save(requireContext(), lastResult, result.getBarcodeFormat().toString());
+            // Keep the camera from immediately replacing this result with its own scan.
+            isScanned = true;
+            handleResult(lastResult);
+            return true;
+        } catch (NotFoundException e) {
+            Toast.makeText(requireContext(), R.string.no_qr_found, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), R.string.error_reading_image, Toast.LENGTH_SHORT).show();
+        }
+        return false;
+    }
+
+    private void startCameraOrRequestPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            startCamera();
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
         }
     }
 
@@ -133,9 +168,6 @@ public class ScanFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         ImageButton btnGallery = view.findViewById(R.id.btnGallery);
         btnGallery.setOnClickListener(v -> scanFromGallery());
-
-        // Push just the two top icon buttons below the status bar; the camera preview
-        // itself stays full-bleed behind the status bar (that's the intended look).
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
             int topInset = insets.getInsets(
                     androidx.core.view.WindowInsetsCompat.Type.statusBars()).top;
@@ -155,6 +187,7 @@ public class ScanFragment extends Fragment {
 
         previewView = view.findViewById(R.id.previewView);
         tvResult = view.findViewById(R.id.tvResult);
+        tvWarning = view.findViewById(R.id.tvWarning);
         bottomSheet = view.findViewById(R.id.bottomSheet);
         btnCopy = view.findViewById(R.id.btnCopy);
         btnShare = view.findViewById(R.id.btnShare);
@@ -171,20 +204,22 @@ public class ScanFragment extends Fragment {
                     .getSystemService(Context.CLIPBOARD_SERVICE);
             ClipData clip = ClipData.newPlainText("QR Result", lastResult);
             clipboard.setPrimaryClip(clip);
-            Toast.makeText(requireContext(), "Copied!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), R.string.copied, Toast.LENGTH_SHORT).show();
         });
 
         btnShare.setOnClickListener(v -> {
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
             shareIntent.setType("text/plain");
             shareIntent.putExtra(Intent.EXTRA_TEXT, lastResult);
-            startActivity(Intent.createChooser(shareIntent, "Share via"));
+            startActivity(Intent.createChooser(shareIntent, getString(R.string.share_via)));
         });
 
         btnScanAgain.setOnClickListener(v -> {
             isScanned = false;
             btnOpen.setVisibility(View.GONE);
+            tvWarning.setVisibility(View.GONE);
             bottomSheet.setVisibility(View.GONE);
+            if (camera == null) startCameraOrRequestPermission();
         });
 
         btnFlash = view.findViewById(R.id.btnFlash);
@@ -213,13 +248,12 @@ public class ScanFragment extends Fragment {
             });
         }
 
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED) {
-            startCamera();
+        Bundle args = getArguments();
+        String sharedImage = args == null ? null : args.getString(ARG_SHARED_IMAGE);
+        if (savedInstanceState == null && sharedImage != null) {
+            if (!scanImageUri(Uri.parse(sharedImage))) startCameraOrRequestPermission();
         } else {
-            ActivityCompat.requestPermissions(requireActivity(),
-                    new String[]{Manifest.permission.CAMERA},
-                    CAMERA_PERMISSION_REQUEST);
+            startCameraOrRequestPermission();
         }
     }
 
@@ -252,8 +286,6 @@ public class ScanFragment extends Fragment {
         startActivityForResult(intent, PICK_IMAGE_REQUEST);
     }
 
-    // Cap only truly huge photos (e.g. 40MP+) to avoid an OOM crash — this is far above
-    // the resolution any dense QR/barcode needs, so ordinary photos are never downsampled.
     private static final int MAX_GALLERY_DIMENSION = 4096;
 
     private Bitmap decodeGalleryBitmap(Uri imageUri) throws java.io.IOException {
@@ -366,7 +398,6 @@ public class ScanFragment extends Fragment {
                                     result = reader.decode(bitmap);
                                     if (result != null) break;
                                 } catch (NotFoundException e) {
-                                    // Try next rotation
                                 } finally {
                                     reader.reset();
                                 }
@@ -432,6 +463,7 @@ public class ScanFragment extends Fragment {
                     if (scaleGestureDetector != null) {
                         scaleGestureDetector.onTouchEvent(event);
                     }
+
                     if (event.getPointerCount() == 1 &&
                             event.getAction() == MotionEvent.ACTION_DOWN) {
 
@@ -468,83 +500,218 @@ public class ScanFragment extends Fragment {
 
     @RequiresPermission(Manifest.permission.VIBRATE)
     private void handleResult(String result) {
-        tvResult.setText(result);
+        final ResultParser.Parsed parsed = ResultParser.parse(result);
+
+        String summary = describe(parsed);
+        tvResult.setText(summary != null ? summary : result);
+        if (parsed.warnings.isEmpty()) {
+            tvWarning.setVisibility(View.GONE);
+        } else {
+            StringBuilder warnings = new StringBuilder();
+            for (ResultParser.Warning w : parsed.warnings) {
+                if (warnings.length() > 0) warnings.append('\n');
+                warnings.append("\u26A0 ").append(warningText(w, parsed));
+            }
+            tvWarning.setText(warnings);
+            tvWarning.setVisibility(View.VISIBLE);
+        }
         bottomSheet.setVisibility(View.VISIBLE);
         vibrate();
 
-        if (result.startsWith("WIFI:")) {
-            btnOpen.setVisibility(View.VISIBLE);
-            btnOpen.setText("Connect WiFi");
-            btnOpen.setOnClickListener(v -> {
-                Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
-                startActivity(intent);
-            });
-        } else if (result.startsWith("tel:")) {
-            btnOpen.setVisibility(View.VISIBLE);
-            btnOpen.setText("Call");
-            btnOpen.setOnClickListener(v -> startActivity(
-                    new Intent(Intent.ACTION_DIAL, Uri.parse(result))));
-        } else if (result.startsWith("smsto:") || result.startsWith("sms:")
-                || result.startsWith("SMSTO:") || result.startsWith("SMS:")) {
-            btnOpen.setVisibility(View.VISIBLE);
-            btnOpen.setText("Send SMS");
-            btnOpen.setOnClickListener(v -> {
-                String sms = result.replaceFirst("(?i)smsto:|sms:", "");
-                String[] parts = sms.split(":");
-                String number = parts[0];
-                String message = parts.length > 1 ? parts[1] : "";
-                Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + number));
-                intent.putExtra("sms_body", message);
-                startActivity(intent);
-            });
-        } else if (result.startsWith("mailto:") || result.startsWith("MAILTO:")
-                || result.contains("@")) {
-            btnOpen.setVisibility(View.VISIBLE);
-            btnOpen.setText("Send Email");
-            btnOpen.setOnClickListener(v -> {
-                String mailto = result.startsWith("mailto:") ? result : "mailto:" + result;
-                startActivity(new Intent(Intent.ACTION_SENDTO, Uri.parse(mailto)));
-            });
-        } else if (result.startsWith("geo:")) {
-            btnOpen.setVisibility(View.VISIBLE);
-            btnOpen.setText("Open Map");
-            btnOpen.setOnClickListener(v -> startActivity(
-                    new Intent(Intent.ACTION_VIEW, Uri.parse(result))));
-        } else if (result.startsWith("MECARD:") || result.startsWith("BEGIN:VCARD")) {
-            btnOpen.setVisibility(View.VISIBLE);
-            btnOpen.setText("Add Contact");
-            btnOpen.setOnClickListener(v -> {
-                Intent intent = new Intent(Intent.ACTION_INSERT);
-                intent.setType(ContactsContract.Contacts.CONTENT_TYPE);
-                startActivity(intent);
-            });
-        } else if (result.startsWith("BEGIN:VEVENT")) {
-            btnOpen.setVisibility(View.VISIBLE);
-            btnOpen.setText("Add Event");
-            btnOpen.setOnClickListener(v -> {
-                Intent intent = new Intent(Intent.ACTION_INSERT);
-                intent.setData(CalendarContract.Events.CONTENT_URI);
-                startActivity(intent);
-            });
-        } else if (result.startsWith("http://") || result.startsWith("https://")
-                || result.contains(".")) {
-            btnOpen.setVisibility(View.VISIBLE);
-            btnOpen.setText("Open");
-            btnOpen.setOnClickListener(v -> {
-                try {
-                    String url = result;
-                    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                        url = "https://" + url;
-                    }
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                } catch (Exception e) {
-                    Toast.makeText(requireContext(), "Cannot open this link",
-                            Toast.LENGTH_SHORT).show();
-                }
-            });
-        } else {
-            btnOpen.setVisibility(View.GONE);
+        btnOpen.setVisibility(View.GONE);
+        switch (parsed.type) {
+            case WIFI:
+                setPrimaryAction(getString(R.string.action_connect_wifi), () -> connectWifi(parsed));
+                break;
+            case PHONE:
+                setPrimaryAction(getString(R.string.action_call), () -> startSafely(new Intent(Intent.ACTION_DIAL,
+                        Uri.fromParts("tel", parsed.get("number"), null))));
+                break;
+            case SMS:
+                setPrimaryAction(getString(R.string.action_send_sms), () -> {
+                    Intent intent = new Intent(Intent.ACTION_SENDTO,
+                            Uri.fromParts("smsto", parsed.get("number"), null));
+                    if (parsed.has("body")) intent.putExtra("sms_body", parsed.get("body"));
+                    startSafely(intent);
+                });
+                break;
+            case EMAIL:
+                setPrimaryAction(getString(R.string.action_send_email), () -> {
+                    Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"));
+                    intent.putExtra(Intent.EXTRA_EMAIL, new String[]{parsed.get("to")});
+                    if (parsed.has("subject")) intent.putExtra(Intent.EXTRA_SUBJECT, parsed.get("subject"));
+                    if (parsed.has("body")) intent.putExtra(Intent.EXTRA_TEXT, parsed.get("body"));
+                    startSafely(intent);
+                });
+                break;
+            case GEO:
+                setPrimaryAction(getString(R.string.action_open_map), () -> startSafely(
+                        new Intent(Intent.ACTION_VIEW, Uri.parse(result.trim()))));
+                break;
+            case CONTACT:
+                setPrimaryAction(getString(R.string.action_add_contact), () -> addContact(parsed));
+                break;
+            case EVENT:
+                setPrimaryAction(getString(R.string.action_add_event), () -> addEvent(parsed));
+                break;
+            case URL:
+                setPrimaryAction(getString(parsed.warnings.isEmpty() ? R.string.open : R.string.action_open_anyway),
+                        () -> startSafely(new Intent(Intent.ACTION_VIEW, Uri.parse(parsed.get("url")))));
+                break;
+            case TEXT:
+            default:
+                break;
         }
+    }
+
+    @Nullable
+    private String describe(ResultParser.Parsed p) {
+        StringBuilder sb = new StringBuilder();
+        switch (p.type) {
+            case WIFI: {
+                sb.append(getString(R.string.sum_wifi));
+                addLine(sb, R.string.sum_name, p.get("ssid"));
+                String security = p.get("security");
+                String password = p.get("password");
+                if (security.equalsIgnoreCase("nopass") || (security.isEmpty() && password.isEmpty())) {
+                    addLine(sb, R.string.sum_security, getString(R.string.sum_open_network));
+                } else {
+                    addLine(sb, R.string.sum_security, security);
+                    addLine(sb, R.string.sum_password, password);
+                }
+                if (p.get("hidden").equals("true")) sb.append('\n').append(getString(R.string.sum_hidden));
+                return sb.toString();
+            }
+            case SMS:
+                sb.append(getString(R.string.sum_sms));
+                addLine(sb, R.string.sum_to, p.get("number"));
+                addLine(sb, R.string.sum_message, p.get("body"));
+                return sb.toString();
+            case EMAIL:
+                if (!p.has("subject") && !p.has("body")) return null;
+                sb.append(getString(R.string.sum_email));
+                addLine(sb, R.string.sum_to, p.get("to"));
+                addLine(sb, R.string.sum_subject, p.get("subject"));
+                addLine(sb, R.string.sum_message, p.get("body"));
+                return sb.toString();
+            case CONTACT:
+                sb.append(getString(R.string.sum_contact));
+                addLine(sb, R.string.sum_name, p.get("name"));
+                addLine(sb, R.string.sum_phone, p.get("phone"));
+                addLine(sb, R.string.sum_phone2, p.get("phone2"));
+                addLine(sb, R.string.sum_email, p.get("email"));
+                addLine(sb, R.string.sum_company, p.get("org"));
+                addLine(sb, R.string.sum_job_title, p.get("title"));
+                addLine(sb, R.string.sum_address, p.get("address"));
+                addLine(sb, R.string.sum_website, p.get("url"));
+                return sb.toString();
+            case EVENT: {
+                sb.append(getString(R.string.sum_event));
+                addLine(sb, R.string.sum_event_title, p.get("title"));
+                if (p.beginMillis >= 0) {
+                    Locale locale = getResources().getConfiguration().getLocales().get(0);
+                    DateFormat df = p.allDay
+                            ? DateFormat.getDateInstance(DateFormat.MEDIUM, locale)
+                            : DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale);
+                    if (p.allDay) df.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    addLine(sb, p.allDay ? R.string.sum_date : R.string.sum_starts,
+                            df.format(new Date(p.beginMillis)));
+                    if (!p.allDay) addLine(sb, R.string.sum_ends, df.format(new Date(p.endMillis)));
+                }
+                addLine(sb, R.string.sum_location, p.get("location"));
+                return sb.toString();
+            }
+            default:
+                return null;
+        }
+    }
+
+    private void addLine(StringBuilder sb, int labelRes, String value) {
+        if (value != null && !value.isEmpty()) {
+            sb.append('\n').append(getString(labelRes)).append(": ").append(value);
+        }
+    }
+
+    private String warningText(ResultParser.Warning w, ResultParser.Parsed p) {
+        switch (w) {
+            case HTTP: return getString(R.string.warn_http);
+            case USERINFO: return getString(R.string.warn_userinfo, p.get("host"));
+            case SHORTENER: return getString(R.string.warn_shortener);
+            case IP_ADDRESS: return getString(R.string.warn_ip);
+            default: return getString(R.string.warn_lookalike);
+        }
+    }
+
+    private void setPrimaryAction(String label, Runnable action) {
+        btnOpen.setText(label);
+        btnOpen.setOnClickListener(v -> action.run());
+        btnOpen.setVisibility(View.VISIBLE);
+    }
+
+    private void startSafely(Intent intent) {
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException | SecurityException e) {
+            Toast.makeText(requireContext(), R.string.no_app_found, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void copyToClipboard(String label, String text, boolean sensitive) {
+        ClipboardManager clipboard = (ClipboardManager) requireActivity()
+                .getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText(label, text);
+        if (sensitive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Keeps the value out of the on-screen clipboard preview.
+            PersistableBundle extras = new PersistableBundle();
+            extras.putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true);
+            clip.getDescription().setExtras(extras);
+        }
+        clipboard.setPrimaryClip(clip);
+    }
+
+    private void connectWifi(ResultParser.Parsed parsed) {
+        String password = parsed.get("password");
+        if (!password.isEmpty()) {
+            copyToClipboard("Wi-Fi password", password, true);
+            Toast.makeText(requireContext(),
+                    getString(R.string.wifi_password_copied, parsed.get("ssid")),
+                    Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(requireContext(),
+                    getString(R.string.wifi_choose_network, parsed.get("ssid")),
+                    Toast.LENGTH_LONG).show();
+        }
+        startSafely(new Intent(Settings.ACTION_WIFI_SETTINGS));
+    }
+
+    private void addContact(ResultParser.Parsed parsed) {
+        Intent intent = new Intent(ContactsContract.Intents.Insert.ACTION);
+        intent.setType(ContactsContract.RawContacts.CONTENT_TYPE);
+        if (parsed.has("name")) intent.putExtra(ContactsContract.Intents.Insert.NAME, parsed.get("name"));
+        if (parsed.has("phone")) intent.putExtra(ContactsContract.Intents.Insert.PHONE, parsed.get("phone"));
+        if (parsed.has("phone2")) intent.putExtra(ContactsContract.Intents.Insert.SECONDARY_PHONE, parsed.get("phone2"));
+        if (parsed.has("email")) intent.putExtra(ContactsContract.Intents.Insert.EMAIL, parsed.get("email"));
+        if (parsed.has("email2")) intent.putExtra(ContactsContract.Intents.Insert.SECONDARY_EMAIL, parsed.get("email2"));
+        if (parsed.has("org")) intent.putExtra(ContactsContract.Intents.Insert.COMPANY, parsed.get("org"));
+        if (parsed.has("title")) intent.putExtra(ContactsContract.Intents.Insert.JOB_TITLE, parsed.get("title"));
+        if (parsed.has("address")) intent.putExtra(ContactsContract.Intents.Insert.POSTAL, parsed.get("address"));
+        String notes = parsed.get("note");
+        if (parsed.has("url")) notes = notes.isEmpty() ? parsed.get("url") : notes + "\n" + parsed.get("url");
+        if (!notes.isEmpty()) intent.putExtra(ContactsContract.Intents.Insert.NOTES, notes);
+        startSafely(intent);
+    }
+
+    private void addEvent(ResultParser.Parsed parsed) {
+        Intent intent = new Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI);
+        if (parsed.has("title")) intent.putExtra(CalendarContract.Events.TITLE, parsed.get("title"));
+        if (parsed.has("location")) intent.putExtra(CalendarContract.Events.EVENT_LOCATION, parsed.get("location"));
+        if (parsed.has("description")) intent.putExtra(CalendarContract.Events.DESCRIPTION, parsed.get("description"));
+        if (parsed.beginMillis >= 0) {
+            intent.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, parsed.beginMillis);
+            intent.putExtra(CalendarContract.EXTRA_EVENT_END_TIME, parsed.endMillis);
+            intent.putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, parsed.allDay);
+        }
+        startSafely(intent);
     }
 
     @RequiresPermission(Manifest.permission.VIBRATE)

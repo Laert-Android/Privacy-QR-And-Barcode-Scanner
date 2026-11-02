@@ -34,7 +34,7 @@ public class QRScannerTileService extends TileService {
             tile.setState(Tile.STATE_INACTIVE);
             tile.setLabel(getString(R.string.tile_label));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                tile.setSubtitle("Tap to scan");
+                tile.setSubtitle(getString(R.string.tile_subtitle));
             }
             tile.updateTile();
         }

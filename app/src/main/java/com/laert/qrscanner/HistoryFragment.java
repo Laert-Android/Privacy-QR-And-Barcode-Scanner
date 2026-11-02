@@ -56,15 +56,15 @@ public class HistoryFragment extends Fragment {
 
         btnClear.setOnClickListener(v -> {
             new AlertDialog.Builder(requireContext())
-                    .setTitle("Clear History")
-                    .setMessage("Delete all scan history?")
-                    .setPositiveButton("Clear", (dialog, which) -> {
+                    .setTitle(R.string.clear_history_title)
+                    .setMessage(R.string.clear_history_message)
+                    .setPositiveButton(R.string.clear, (dialog, which) -> {
                         HistoryManager.clear(requireContext());
                         loadHistory();
-                        Toast.makeText(requireContext(), "History cleared",
+                        Toast.makeText(requireContext(), R.string.history_cleared,
                                 Toast.LENGTH_SHORT).show();
                     })
-                    .setNegativeButton("Cancel", null)
+                    .setNegativeButton(R.string.cancel, null)
                     .show();
         });
 
@@ -124,7 +124,7 @@ public class HistoryFragment extends Fragment {
     }
 
     private void showOptions(String content) {
-        String[] options = {"Copy", "Share", "Open"};
+        String[] options = {getString(R.string.copy), getString(R.string.share), getString(R.string.open)};
         new AlertDialog.Builder(requireContext())
                 .setTitle(content.length() > 50 ? content.substring(0, 50) + "..." : content)
                 .setItems(options, (dialog, which) -> {
@@ -133,13 +133,13 @@ public class HistoryFragment extends Fragment {
                             ClipboardManager clipboard = (ClipboardManager)
                                     requireActivity().getSystemService(Context.CLIPBOARD_SERVICE);
                             clipboard.setPrimaryClip(ClipData.newPlainText("Scan", content));
-                            Toast.makeText(requireContext(), "Copied!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(requireContext(), R.string.copied, Toast.LENGTH_SHORT).show();
                             break;
                         case 1:
                             Intent shareIntent = new Intent(Intent.ACTION_SEND);
                             shareIntent.setType("text/plain");
                             shareIntent.putExtra(Intent.EXTRA_TEXT, content);
-                            startActivity(Intent.createChooser(shareIntent, "Share"));
+                            startActivity(Intent.createChooser(shareIntent, getString(R.string.share)));
                             break;
                         case 2:
                             try {
@@ -150,7 +150,7 @@ public class HistoryFragment extends Fragment {
                                 }
                                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
                             } catch (Exception e) {
-                                Toast.makeText(requireContext(), "Cannot open",
+                                Toast.makeText(requireContext(), R.string.cannot_open,
                                         Toast.LENGTH_SHORT).show();
                             }
                             break;
