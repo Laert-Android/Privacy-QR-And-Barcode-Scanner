@@ -115,4 +115,5 @@
     <string name="language_system">System default</string>
     <string name="language_english" translatable="false">English</string>
     <string name="language_albanian" translatable="false">Shqip</string>
+    <string name="language_ukrainian" translatable="false">Українська</string>
 </resources>
