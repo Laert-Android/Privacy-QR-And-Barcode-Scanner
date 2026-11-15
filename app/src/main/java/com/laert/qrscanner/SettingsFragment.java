@@ -41,13 +41,17 @@ public class SettingsFragment extends Fragment {
             group.check(R.id.rbAlbanian);
         } else if (language.equals("en")) {
             group.check(R.id.rbEnglish);
-        } else {
+        } else if (language.equals("uk")) {
+            group.check(R.id.rbUkrainian);
+        } 
+        else {
             group.check(R.id.rbSystem);
         }
 
         group.setOnCheckedChangeListener((g, checkedId) -> {
             String tags = checkedId == R.id.rbAlbanian ? "sq"
-                    : checkedId == R.id.rbEnglish ? "en" : "";
+                    : checkedId == R.id.rbEnglish ? "en"
+                    : checkedId == R.id.rbUkrainian ? "uk" : "";
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tags));
         });
     }
