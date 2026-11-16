@@ -112,6 +112,7 @@ No network permission is requested. No data leaves your device. No third-party S
 -  [XdaForums](https://xdaforums.com/t/privacy-qr-scanner-free-open-source-fast-lightweight-and-fully-offline-qr-code-barcode-scanner-for-android-no-tracking-no-ads.4792635)
   - [Appteka](https://appteka.store/app/7d4r335397)
   - [F-droid](https://f-droid.org/sq/packages/com.laert.qrscanner)
+  - [OpenApk](https://www.openapk.net/privacy-qr-and-barcode-scanner/com.laert.qrscanner)
 
 ---
 
