@@ -3,16 +3,19 @@
 ![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)
 
 
-![Version](https://img.shields.io/badge/Version-2.2-teal.svg)
+![Version](https://img.shields.io/badge/Version-2.3-teal.svg)
 
 ![Android](https://img.shields.io/badge/Android-5.0%2B-green.svg)
 
 A fast, lightweight, and fully offline QR code and barcode scanner for Android. No internet permission. No tracking. No ads.
 
 ---
-## Latest Version: 2.2
+## Latest Version: 2.3
 
 ### Changelog
+
+**Version 2.3**
+Added Ukranian Language Thanks to [ShulhaCorporation](https://github.com/ShulhaCorporation)
 
 **Version 2.2**
 - Scan from Share: pick "Privacy QR" in the Share sheet of the gallery or any app to scan a shared picture without opening the picker. Only content:// pictures are accepted
