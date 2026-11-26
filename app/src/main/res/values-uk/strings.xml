@@ -112,4 +112,26 @@
     <string name="language_title">Мова</string>
     <string name="language_note">Змінює мову тільки цього додатка.</string>
     <string name="language_system">Системна</string>
+    <string name="batch_toggle">Пакетне сканування</string>
+    <string name="batch_on">Пакетне сканування ввімкнено: кожен код, на який ви наведете камеру, додається до списку</string>
+    <string name="batch_off">Пакетне сканування вимкнено</string>
+    <string name="batch_last">Останній: %1$s</string>
+    <string name="batch_count">%1$d відскановано · %2$d унікальних</string>
+    <string name="batch_view">Показати список</string>
+    <string name="batch_list_title">Відскановані коди</string>
+    <string name="batch_empty">Поки що нічого не відскановано</string>
+    <string name="batch_hint_remove">Довго натисніть рядок, щоб видалити його</string>
+    <string name="batch_save">Зберегти файл</string>
+    <string name="batch_share">Поділитися файлом</string>
+    <string name="batch_copy_all">Копіювати все</string>
+    <string name="batch_clear">Очистити список</string>
+    <string name="batch_clear_confirm">Очистити весь список?</string>
+    <string name="batch_removed">Видалено</string>
+    <string name="batch_choose_format">Оберіть формат</string>
+    <string name="batch_close">Закрити</string>
+    <string name="batch_col_content">Вміст</string>
+    <string name="batch_col_format">Формат</string>
+    <string name="batch_col_quantity">Кількість</string>
+    <string name="batch_col_first_scanned">Перше сканування</string>
+    <string name="batch_export_failed">Не вдалося створити файл</string>
 </resources>

@@ -112,4 +112,26 @@
     <string name="language_title">Gjuha</string>
     <string name="language_note">Ndryshon gjuhën vetëm për këtë aplikacion.</string>
     <string name="language_system">Gjuha e sistemit</string>
+    <string name="batch_toggle">Skanim në grup</string>
+    <string name="batch_on">Skanimi në grup u ndez: çdo kod që shënjestron shtohet në listë</string>
+    <string name="batch_off">Skanimi në grup u fik</string>
+    <string name="batch_last">I fundit: %1$s</string>
+    <string name="batch_count">%1$d të skanuara · %2$d unike</string>
+    <string name="batch_view">Shiko listën</string>
+    <string name="batch_list_title">Kodet e skanuara</string>
+    <string name="batch_empty">Ende nuk është skanuar asgjë</string>
+    <string name="batch_hint_remove">Shtyp gjatë një rresht për ta hequr</string>
+    <string name="batch_save">Ruaj skedarin</string>
+    <string name="batch_share">Ndaj skedarin</string>
+    <string name="batch_copy_all">Kopjo të gjitha</string>
+    <string name="batch_clear">Pastro listën</string>
+    <string name="batch_clear_confirm">Të pastrohet gjithë lista?</string>
+    <string name="batch_removed">U hoq</string>
+    <string name="batch_choose_format">Zgjidhni formatin</string>
+    <string name="batch_close">Mbyll</string>
+    <string name="batch_col_content">Përmbajtja</string>
+    <string name="batch_col_format">Formati</string>
+    <string name="batch_col_quantity">Sasia</string>
+    <string name="batch_col_first_scanned">Skanuar së pari</string>
+    <string name="batch_export_failed">Skedari nuk u krijua</string>
 </resources>

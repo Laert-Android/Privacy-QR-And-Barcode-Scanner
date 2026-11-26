@@ -51,6 +51,17 @@
         android:contentDescription="@string/flash"
         android:tint="#FFFFFF"/>
 
+    <ImageButton
+        android:id="@+id/btnBatch"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_margin="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_batch"
+        android:tint="#FFFFFF"
+        android:contentDescription="@string/batch_toggle"/>
+
     <!-- Bottom Sheet -->
     <LinearLayout
         android:id="@+id/bottomSheet"
@@ -158,6 +169,55 @@
                 app:autoSizeStepGranularity="1sp"
                 android:textColor="#FFFFFF"/>
 
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Batch scan: running count + access to the list -->
+    <LinearLayout
+        android:id="@+id/batchBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="@drawable/batch_bar_bg"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvBatchLast"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="#BBBBBB"
+            android:textSize="13sp"
+            android:visibility="gone"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvBatchCount"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnBatchView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:text="@string/batch_view"
+                android:background="@drawable/btn_copy"
+                android:textColor="#FFFFFF"/>
         </LinearLayout>
     </LinearLayout>
 

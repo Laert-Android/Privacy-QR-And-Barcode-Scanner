@@ -116,4 +116,26 @@
     <string name="language_english" translatable="false">English</string>
     <string name="language_albanian" translatable="false">Shqip</string>
     <string name="language_ukrainian" translatable="false">Українська</string>
+    <string name="batch_toggle">Batch scan</string>
+    <string name="batch_on">Batch scan on: every code you point at is added to the list</string>
+    <string name="batch_off">Batch scan off</string>
+    <string name="batch_last">Last: %1$s</string>
+    <string name="batch_count">%1$d scanned · %2$d unique</string>
+    <string name="batch_view">View list</string>
+    <string name="batch_list_title">Scanned codes</string>
+    <string name="batch_empty">Nothing scanned yet</string>
+    <string name="batch_hint_remove">Long-press a row to remove it</string>
+    <string name="batch_save">Save file</string>
+    <string name="batch_share">Share file</string>
+    <string name="batch_copy_all">Copy all</string>
+    <string name="batch_clear">Clear list</string>
+    <string name="batch_clear_confirm">Clear the whole list?</string>
+    <string name="batch_removed">Removed</string>
+    <string name="batch_choose_format">Choose a format</string>
+    <string name="batch_close">Close</string>
+    <string name="batch_col_content">Content</string>
+    <string name="batch_col_format">Format</string>
+    <string name="batch_col_quantity">Quantity</string>
+    <string name="batch_col_first_scanned">First scanned</string>
+    <string name="batch_export_failed">Could not create the file</string>
 </resources>

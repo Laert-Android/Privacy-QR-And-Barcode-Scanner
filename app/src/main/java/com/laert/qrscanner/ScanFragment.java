@@ -32,6 +32,21 @@ import java.util.Locale;
 import java.util.TimeZone;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import android.content.res.ColorStateList;
+import android.widget.ListView;
+import android.widget.ArrayAdapter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.FileProvider;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.core.widget.ImageViewCompat;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
@@ -109,6 +124,20 @@ public class ScanFragment extends Fragment {
     private ScaleGestureDetector scaleGestureDetector;
     private float currentZoomRatio = 1f;
     private ImageButton btnFlash;
+
+    // ---- batch scan
+    private static final String XLSX_MIME =
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    private BatchViewModel batch;
+    private ImageButton btnBatch;
+    private LinearLayout batchBar;
+    private TextView tvBatchLast, tvBatchCount;
+
+    // "Save file" uses the system file picker: no storage permission, works on every Android version.
+    private final ActivityResultLauncher<String> saveXlsxLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument(XLSX_MIME), uri -> writeBatchExport(uri, true));
+    private final ActivityResultLauncher<String> saveCsvLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("text/csv"), uri -> writeBatchExport(uri, false));
     private boolean torchEnabled = false;
 
     @Nullable
@@ -141,6 +170,10 @@ public class ScanFragment extends Fragment {
 
             Result result = new MultiFormatReader().decode(binaryBitmap);
             lastResult = result.getText();
+            if (batch != null && batch.active) {
+                onBatchScan(lastResult, result.getBarcodeFormat().toString());
+                return true;
+            }
             HistoryManager.save(requireContext(), lastResult, result.getBarcodeFormat().toString());
             // Keep the camera from immediately replacing this result with its own scan.
             isScanned = true;
@@ -182,6 +215,11 @@ public class ScanFragment extends Fragment {
                     (ViewGroup.MarginLayoutParams) flash.getLayoutParams();
             flashParams.topMargin = baseMargin + topInset;
             flash.setLayoutParams(flashParams);
+            ImageButton batchButton = v.findViewById(R.id.btnBatch);
+            ViewGroup.MarginLayoutParams batchParams =
+                    (ViewGroup.MarginLayoutParams) batchButton.getLayoutParams();
+            batchParams.topMargin = baseMargin + topInset;
+            batchButton.setLayoutParams(batchParams);
             return insets;
         });
 
@@ -219,8 +257,18 @@ public class ScanFragment extends Fragment {
             btnOpen.setVisibility(View.GONE);
             tvWarning.setVisibility(View.GONE);
             bottomSheet.setVisibility(View.GONE);
+            applyBatchUi();
             if (camera == null) startCameraOrRequestPermission();
         });
+
+        batch = new ViewModelProvider(requireActivity()).get(BatchViewModel.class);
+        btnBatch = view.findViewById(R.id.btnBatch);
+        batchBar = view.findViewById(R.id.batchBar);
+        tvBatchLast = view.findViewById(R.id.tvBatchLast);
+        tvBatchCount = view.findViewById(R.id.tvBatchCount);
+        btnBatch.setOnClickListener(v -> setBatchActive(!batch.active));
+        view.findViewById(R.id.btnBatchView).setOnClickListener(v -> showBatchList());
+        applyBatchUi();
 
         btnFlash = view.findViewById(R.id.btnFlash);
 
@@ -403,7 +451,14 @@ public class ScanFragment extends Fragment {
                                 }
                             }
 
-                            if (result != null && !isScanned) {
+                            if (result != null && batch.active) {
+                                final String batchText = result.getText();
+                                final String batchFormat = result.getBarcodeFormat().toString();
+                                // The same code held in view counts once, not once per frame.
+                                if (batch.debouncer.shouldAccept(batchText, System.currentTimeMillis())) {
+                                    requireActivity().runOnUiThread(() -> onBatchScan(batchText, batchFormat));
+                                }
+                            } else if (result != null && !isScanned) {
                                 isScanned = true;
                                 lastResult = result.getText();
                                 String format = result.getBarcodeFormat().toString();
@@ -502,6 +557,7 @@ public class ScanFragment extends Fragment {
     private void handleResult(String result) {
         final ResultParser.Parsed parsed = ResultParser.parse(result);
 
+        batchBar.setVisibility(View.GONE);
         String summary = describe(parsed);
         tvResult.setText(summary != null ? summary : result);
         if (parsed.warnings.isEmpty()) {
@@ -561,6 +617,199 @@ public class ScanFragment extends Fragment {
             case TEXT:
             default:
                 break;
+        }
+    }
+
+    // ===================================================================== Batch scan
+
+    private void setBatchActive(boolean on) {
+        batch.active = on;
+        batch.debouncer.reset();
+        if (on) {
+            // Leave single-result mode: no result sheet, and the camera has to keep looking.
+            isScanned = false;
+            bottomSheet.setVisibility(View.GONE);
+            btnOpen.setVisibility(View.GONE);
+            tvWarning.setVisibility(View.GONE);
+            if (camera == null) startCameraOrRequestPermission();
+        }
+        Toast.makeText(requireContext(), on ? R.string.batch_on : R.string.batch_off,
+                Toast.LENGTH_SHORT).show();
+        applyBatchUi();
+    }
+
+    /** Brings the button, the bar and the counters in line with the batch state. */
+    private void applyBatchUi() {
+        boolean on = batch.active;
+        ImageViewCompat.setImageTintList(btnBatch,
+                ColorStateList.valueOf(on ? 0xFF42A5F5 : 0xFFFFFFFF));
+        boolean resultShowing = bottomSheet.getVisibility() == View.VISIBLE;
+        batchBar.setVisibility(!resultShowing && (on || !batch.list.isEmpty())
+                ? View.VISIBLE : View.GONE);
+        boolean showLast = on && !batch.last.isEmpty();
+        tvBatchLast.setText(showLast ? getString(R.string.batch_last, shorten(batch.last, 80)) : "");
+        tvBatchLast.setVisibility(showLast ? View.VISIBLE : View.GONE);
+        tvBatchCount.setText(getString(R.string.batch_count,
+                batch.list.totalCount(), batch.list.uniqueCount()));
+    }
+
+    @RequiresPermission(Manifest.permission.VIBRATE)
+    private void onBatchScan(String content, String format) {
+        batch.list.add(content, format, System.currentTimeMillis());
+        batch.last = content;
+        vibrate();
+        applyBatchUi();
+    }
+
+    private static String shorten(String text, int max) {
+        String flat = text.replace('\n', ' ').replace('\r', ' ');
+        return flat.length() > max ? flat.substring(0, max) + "\u2026" : flat;
+    }
+
+    private void showBatchList() {
+        View content = getLayoutInflater().inflate(R.layout.dialog_batch, null);
+        TextView summary = content.findViewById(R.id.tvBatchSummary);
+        ListView listView = content.findViewById(R.id.lvBatch);
+        listView.setEmptyView(content.findViewById(R.id.tvBatchEmpty));
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.batch_list_title)
+                .setView(content)
+                .setNegativeButton(R.string.batch_close, null)
+                .create();
+
+        Runnable refresh = () -> {
+            List<String> rows = new ArrayList<>();
+            for (BatchList.Entry e : batch.list.entries()) {
+                rows.add(shorten(e.content, 120) + (e.count > 1 ? "  \u00D7" + e.count : ""));
+            }
+            listView.setAdapter(new ArrayAdapter<>(requireContext(),
+                    android.R.layout.simple_list_item_1, rows));
+            summary.setText(getString(R.string.batch_count,
+                    batch.list.totalCount(), batch.list.uniqueCount()));
+            applyBatchUi();
+        };
+
+        listView.setOnItemLongClickListener((parent, v, position, id) -> {
+            List<BatchList.Entry> entries = batch.list.entries();
+            if (position < entries.size()) {
+                batch.list.remove(entries.get(position).content);
+                Toast.makeText(requireContext(), R.string.batch_removed, Toast.LENGTH_SHORT).show();
+                refresh.run();
+            }
+            return true;
+        });
+
+        content.findViewById(R.id.btnBatchSave).setOnClickListener(v -> {
+            if (batchEmptyToast()) return;
+            chooseExportFormat(true, dialog);
+        });
+        content.findViewById(R.id.btnBatchShare).setOnClickListener(v -> {
+            if (batchEmptyToast()) return;
+            chooseExportFormat(false, dialog);
+        });
+        content.findViewById(R.id.btnBatchCopyAll).setOnClickListener(v -> {
+            if (batchEmptyToast()) return;
+            ClipboardManager clipboard = (ClipboardManager) requireActivity()
+                    .getSystemService(Context.CLIPBOARD_SERVICE);
+            clipboard.setPrimaryClip(ClipData.newPlainText("Batch scan",
+                    SpreadsheetExport.toClipboardText(batch.list.entries())));
+            Toast.makeText(requireContext(), R.string.copied, Toast.LENGTH_SHORT).show();
+        });
+        content.findViewById(R.id.btnBatchClear).setOnClickListener(v -> {
+            if (batchEmptyToast()) return;
+            new AlertDialog.Builder(requireContext())
+                    .setMessage(R.string.batch_clear_confirm)
+                    .setPositiveButton(R.string.clear, (d, which) -> {
+                        batch.list.clear();
+                        batch.last = "";
+                        batch.debouncer.reset();
+                        refresh.run();
+                    })
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
+        });
+
+        refresh.run();
+        dialog.show();
+    }
+
+    /** @return true (after telling the user) if there is nothing to export or copy. */
+    private boolean batchEmptyToast() {
+        if (!batch.list.isEmpty()) return false;
+        Toast.makeText(requireContext(), R.string.batch_empty, Toast.LENGTH_SHORT).show();
+        return true;
+    }
+
+    private void chooseExportFormat(boolean save, AlertDialog parent) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.batch_choose_format)
+                .setItems(new CharSequence[]{"Excel (.xlsx)", "CSV (.csv)"}, (d, which) -> {
+                    boolean xlsx = which == 0;
+                    parent.dismiss();
+                    if (save) {
+                        (xlsx ? saveXlsxLauncher : saveCsvLauncher).launch(batchFileName(xlsx));
+                    } else {
+                        shareBatchExport(xlsx);
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private String batchFileName(boolean xlsx) {
+        String stamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ROOT).format(new Date());
+        return "batch_scan_" + stamp + (xlsx ? ".xlsx" : ".csv");
+    }
+
+    private byte[] buildBatchExport(boolean xlsx) throws IOException {
+        String[] header = {
+                getString(R.string.batch_col_content), getString(R.string.batch_col_format),
+                getString(R.string.batch_col_quantity), getString(R.string.batch_col_first_scanned)};
+        List<BatchList.Entry> entries = batch.list.entries();
+        return xlsx ? SpreadsheetExport.toXlsx(header, entries)
+                : SpreadsheetExport.toCsv(header, entries).getBytes(StandardCharsets.UTF_8);
+    }
+
+    private void writeBatchExport(@Nullable Uri uri, boolean xlsx) {
+        if (uri == null || !isAdded()) return;
+        try (OutputStream out = requireContext().getContentResolver().openOutputStream(uri)) {
+            if (out == null) throw new IOException("No output stream");
+            out.write(buildBatchExport(xlsx));
+            Toast.makeText(requireContext(), R.string.saved, Toast.LENGTH_SHORT).show();
+        } catch (IOException | RuntimeException e) {
+            Toast.makeText(requireContext(), R.string.batch_export_failed, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void shareBatchExport(boolean xlsx) {
+        try {
+            byte[] data = buildBatchExport(xlsx);
+            // A private cache file handed to the chosen app through FileProvider; nothing is
+            // added to the gallery or downloads.
+            File dir = new File(requireContext().getCacheDir(), "shared");
+            if (!dir.exists() && !dir.mkdirs()) throw new IOException("No cache directory");
+            File[] old = dir.listFiles();
+            if (old != null) {
+                for (File f : old) {
+                    //noinspection ResultOfMethodCallIgnored
+                    f.delete();
+                }
+            }
+            File file = new File(dir, batchFileName(xlsx));
+            try (FileOutputStream out = new FileOutputStream(file)) {
+                out.write(data);
+            }
+            Uri uri = FileProvider.getUriForFile(requireContext(),
+                    requireContext().getPackageName() + ".fileprovider", file);
+            Intent send = new Intent(Intent.ACTION_SEND);
+            send.setType(xlsx ? XLSX_MIME : "text/csv");
+            send.putExtra(Intent.EXTRA_STREAM, uri);
+            send.setClipData(ClipData.newRawUri("", uri));
+            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(send, getString(R.string.share_via)));
+        } catch (IOException | RuntimeException e) {
+            Toast.makeText(requireContext(), R.string.error_sharing, Toast.LENGTH_SHORT).show();
         }
     }
 
